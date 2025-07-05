@@ -1,12 +1,4 @@
 import { ethErrors } from 'eth-rpc-errors';
-import { initializeApp } from 'firebase/app';
-import {
-    getAuth,
-    indexedDBLocalPersistence,
-    onAuthStateChanged,
-    setPersistence,
-    signInAnonymously,
-} from 'firebase/auth/web-extension';
 import 'reflect-metadata';
 
 import providerController from '@/background/controller/provider';
@@ -69,7 +61,12 @@ async function initAppMeta() {
   // description.content = i18n.t('appDescription');
   // head?.appendChild(description);
 
-  firebaseSetup();
+  // Only setup Firebase in production mode
+  if (process.env.NODE_ENV !== 'development') {
+    firebaseSetup();
+  } else {
+    console.log('Development mode: Skipping Firebase initialization completely');
+  }
 
   // note fcl setup is async
   await userWalletService.setupFcl();
@@ -83,6 +80,16 @@ async function firebaseSetup() {
   }
 
   try {
+    // Dynamic imports to avoid loading Firebase in development
+    const { initializeApp } = await import('firebase/app');
+    const {
+      getAuth,
+      indexedDBLocalPersistence,
+      onAuthStateChanged,
+      setPersistence,
+      signInAnonymously,
+    } = await import('firebase/auth/web-extension');
+
     const env: string = process.env.NODE_ENV!;
     const firebaseConfig = getFirbaseConfig();
 
