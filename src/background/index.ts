@@ -76,30 +76,40 @@ async function initAppMeta() {
 }
 
 async function firebaseSetup() {
-  const env: string = process.env.NODE_ENV!;
-  const firebaseConfig = getFirbaseConfig();
-
-  // In development mode, skip Firebase setup if config is incomplete
-  if (env === 'development') {
-    console.log('Development mode: Firebase setup skipped');
+  // In development mode, completely skip Firebase setup
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Development mode: Firebase setup completely skipped');
     return;
   }
 
-  const app = initializeApp(firebaseConfig, env);
+  try {
+    const env: string = process.env.NODE_ENV!;
+    const firebaseConfig = getFirbaseConfig();
 
-  const auth = getAuth(app);
-  setPersistence(auth, indexedDBLocalPersistence);
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // User is signed in, see docs for a list of available properties
-      // https://firebase.google.com/docs/reference/js/firebase.User
-      // note fcl setup is async
-      userWalletService.setupFcl();
-    } else {
-      // User is signed out
-      signInAnonymously(auth);
+    // If no config is available, skip Firebase setup
+    if (!firebaseConfig) {
+      console.log('Firebase config not available, skipping Firebase setup');
+      return;
     }
-  });
+
+    const app = initializeApp(firebaseConfig, env);
+
+    const auth = getAuth(app);
+    setPersistence(auth, indexedDBLocalPersistence);
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        // note fcl setup is async
+        userWalletService.setupFcl();
+      } else {
+        // User is signed out
+        signInAnonymously(auth);
+      }
+    });
+  } catch (error) {
+    console.log('Firebase setup failed, continuing without Firebase:', error);
+  }
 }
 
 async function restoreAppState() {
