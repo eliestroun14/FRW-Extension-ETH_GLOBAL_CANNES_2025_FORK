@@ -13,6 +13,7 @@ const SortHat = () => {
   const [to, setTo] = useState('');
   const [showDevSetup, setShowDevSetup] = useState(false);
   const [isCheckingWallet, setIsCheckingWallet] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   // eslint-disable-next-line prefer-const
   let [getApproval, , rejectApproval] = useApproval();
 
@@ -37,12 +38,14 @@ const SortHat = () => {
           await rejectApproval();
         }
         setTo('/dashboard');
+        setHasInitialized(true);
         return;
       }
 
       let approval = await getApproval();
       if (!wallet) {
         setTo('/unlock');
+        setHasInitialized(true);
         return;
       }
 
@@ -61,25 +64,21 @@ const SortHat = () => {
       const isBooted = await wallet.isBooted();
       console.log('Wallet isBooted:', isBooted, 'isInTab:', isInTab);
 
-      if (!isBooted && !isInTab) {
+      if (!isBooted) {
         // In development mode, show auto-setup component instead of redirecting
         if (process.env.NODE_ENV === 'development') {
           console.log('Wallet not booted, showing dev setup');
           setShowDevSetup(true);
+          setHasInitialized(true);
           return;
         }
-        openInternalPageInTab('welcome');
+        if (!isInTab) {
+          openInternalPageInTab('welcome');
+          return;
+        }
+        setTo('/welcome');
+        setHasInitialized(true);
         return;
-      }
-
-      // Also check if wallet is booted but no current account exists
-      if (!isBooted) {
-        // In development mode, always show auto-setup if not booted
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Wallet not booted (regardless of tab), showing dev setup');
-          setShowDevSetup(true);
-          return;
-        }
       }
 
       const isUnlocked = await wallet.isUnlocked();
@@ -87,14 +86,9 @@ const SortHat = () => {
 
       if (!isUnlocked) {
         setTo('/unlock');
+        setHasInitialized(true);
         return;
       }
-
-      // if ((await wallet.hasPageStateCache()) && !isInNotification && !isInTab) {
-      //   const cache = await wallet.getPageStateCache()!;
-      //   setTo(cache.path);
-      //   return;
-      // }
 
       const currentAccount = await wallet.getCurrentAccount();
       console.log('Current account:', currentAccount);
@@ -104,6 +98,7 @@ const SortHat = () => {
         if (process.env.NODE_ENV === 'development') {
           console.log('No current account, showing dev setup');
           setShowDevSetup(true);
+          setHasInitialized(true);
           return;
         }
         setTo('/welcome');
@@ -112,33 +107,49 @@ const SortHat = () => {
       } else {
         setTo('/dashboard');
       }
+      setHasInitialized(true);
+    } catch (error) {
+      console.error('Error in loadView:', error);
+      // If there's any error and we're in development, switch to demo mode
+      if (process.env.NODE_ENV === 'development') {
+        localStorage.setItem('demo_mode', 'true');
+        setTo('/dashboard');
+      } else {
+        setTo('/welcome');
+      }
+      setHasInitialized(true);
     } finally {
       setIsCheckingWallet(false);
     }
-  }, [getApproval, rejectApproval, wallet, isCheckingWallet, showDevSetup]);
+  }, [getApproval, rejectApproval, wallet]);
 
   const handleSetupComplete = useCallback(() => {
     console.log('Setup completed, resetting state...');
     setShowDevSetup(false);
     setIsCheckingWallet(false);
-    
+
     // Check if we're in demo mode
     const isDemoMode = localStorage.getItem('demo_mode') === 'true';
-    
+    console.log('Demo mode check:', isDemoMode);
+
     if (isDemoMode) {
       console.log('Demo mode active, going to dashboard directly');
       setTo('/dashboard');
     } else {
-      // Only reload the view if not in demo mode
+      console.log('Not in demo mode, reloading view to check wallet state');
+      // Force a refresh of the view
+      setTo('');
       setTimeout(() => {
         loadView();
-      }, 500);
+      }, 100);
     }
-  }, [loadView]);
+  }, []);
 
   useEffect(() => {
-    loadView();
-  }, [loadView]);
+    if (!hasInitialized) {
+      loadView();
+    }
+  }, [loadView, hasInitialized]);
 
   if (showDevSetup) {
     return <DevAutoSetup onSetupComplete={handleSetupComplete} />;

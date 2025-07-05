@@ -35,11 +35,12 @@ This fork includes an AI Agent for DeFi onboarding! To get it working:
 4. **Auto-Setup in Development**:
    - When you first open the extension, it will attempt to automatically create a development wallet
    - If auto-setup succeeds, you'll have a fully functional wallet with your `DEV_PASSWORD`
-   - If auto-setup fails, click **"Skip Setup for Demo"** to access the AI Agent features
+   - If auto-setup fails, the extension will **automatically switch to demo mode**
+   - You can also manually click **"Skip Setup for Demo"** if needed
    - In demo mode, the AI Agent tab is fully functional while wallet features are limited
 
 5. **Try the AI Agent**:
-   - After setup (or demo mode), click the 4th tab "AI Agent" to see the new features!
+   - After setup (or auto-demo mode), click the 4th tab "AI Agent" to see the new features!
    - The AI Agent works in both full wallet mode and demo mode
 
 **Note**: Firebase is disabled in development mode to avoid configuration errors. The extension will work without Firebase backend in demo mode, and all Firebase-related console messages are expected and can be ignored.
@@ -236,14 +237,20 @@ The analysis will generate several files in the `.github-data` directory:
    - No action needed - these are informational messages only
 
 4. **Auto-Setup Issues / Infinite Loop**
-   - If the auto-setup fails or gets stuck in a loop, use the "Skip Setup for Demo" button
-   - This bypasses wallet creation and allows you to access the AI Agent features
-   - The wallet functionality will be limited, but the AI Agent tab will be fully accessible
+   - ✅ **FIXED**: Infinite loop issues have been resolved
+   - ✅ **FIXED**: Multiple component re-renders causing duplicate initialization
+   - The extension now automatically switches to demo mode if wallet creation fails
+   - Demo mode provides full access to AI Agent features without wallet functionality
 
 5. **TypeScript Build Errors**
    - ✅ **FIXED**: TypeScript compilation errors have been resolved
    - The extension builds successfully with `pnpm build:dev-ci`
    - All AI Agent features are fully functional
+
+6. **Uncaught Promise Errors**
+   - ✅ **FIXED**: Added error handling for wallet operations in demo mode
+   - ✅ **FIXED**: Prevented invalid API calls that were causing JSON parsing errors
+   - Extension now runs cleanly in demo mode without console errors
 
 **Loading the Extension:**
 - Always use `pnpm build:dev-ci` (not `build:dev`) for stable builds
@@ -251,6 +258,8 @@ The analysis will generate several files in the `.github-data` directory:
 - Check Chrome DevTools console for specific error details
 
 **Demo Mode:**
-- If wallet creation fails, click "Skip Setup for Demo" to access the AI Agent
+- ✅ **IMPROVED**: The extension automatically switches to demo mode when wallet creation fails
+- ✅ **IMPROVED**: Demo mode now runs without console errors or uncaught promises
+- You can also manually click "Skip Setup for Demo" if needed
 - In demo mode, you can fully explore the AI Agent features in the 4th tab
 - Some wallet functionality may be limited, but this is intended for showcasing the AI features

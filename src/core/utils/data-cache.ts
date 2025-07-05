@@ -61,6 +61,13 @@ export const registerRefreshListener = (
         // Remove the first argument (the whole key)
         const [, ...args] = matchedArgs;
         try {
+          // In development mode, skip loaders that might fail due to missing backend
+          if (process.env.NODE_ENV === 'development' && args.some(arg =>
+            typeof arg === 'string' && (arg.includes('news') || arg.includes('api'))
+          )) {
+            console.log('Development mode: skipping data refresh for', key, args);
+            return;
+          }
           await loader(...args);
         } catch (error) {
           consoleError('Error refreshing data', key, args, error);

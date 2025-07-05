@@ -88,15 +88,26 @@ const Header = ({ _loading = false }) => {
         // currentId always takes precedence
         // NOTE: TO FIX it also should be set to the index of the account in the keyring array, NOT the index in the loggedInAccounts array
 
+        // Check if we're in demo mode - if so, skip profile switching
+        const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+        if (isDemoMode && process.env.NODE_ENV === 'development') {
+          console.log('Demo mode active, skipping profile switch');
+          return;
+        }
+
         // await usewallet.signOutWallet();
         // await usewallet.clearWallet();
         await usewallet.switchProfile(profileId);
         // await usewallet.switchNetwork(switchingTo);
       } catch (error) {
         consoleError('Error during account switch:', error);
-        //if cannot login directly with current password switch to unlock page
-        await usewallet.lockWallet();
-        navigate('/unlock');
+        // In demo mode, don't try to navigate to unlock
+        const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+        if (!isDemoMode) {
+          //if cannot login directly with current password switch to unlock page
+          await usewallet.lockWallet();
+          navigate('/unlock');
+        }
       } finally {
         setSwitchLoading(false);
       }

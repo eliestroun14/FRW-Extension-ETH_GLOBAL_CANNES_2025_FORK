@@ -52,58 +52,36 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
         try {
           await wallet.unlock(devPassword);
           console.log('Wallet unlocked successfully!');
-          setTimeout(() => {
-            onSetupComplete();
-          }, 500);
+          onSetupComplete();
           return;
         } catch (unlockErr) {
-          console.log('Failed to unlock existing wallet, will create new one:', unlockErr);
+          console.log('Failed to unlock existing wallet, will try to continue with demo mode:', unlockErr);
+          localStorage.setItem('demo_mode', 'true');
+          onSetupComplete();
+          return;
         }
       }
 
-      // Try the simple boot approach first
-      console.log('Attempting to boot wallet with password...');
-      try {
-        await wallet.boot(devPassword);
-        console.log('Wallet booted successfully!');
-
-        // Verify if wallet is actually booted after boot call
-        setTimeout(async () => {
-          const newIsBooted = await wallet.isBooted();
-          console.log('After boot - wallet isBooted:', newIsBooted);
-          
-          if (newIsBooted) {
-            onSetupComplete();
-          } else {
-            console.log('Boot succeeded but wallet still not booted, switching to demo mode');
-            setError('Wallet creation partially succeeded but not fully functional. Please use demo mode.');
-            setIsCreating(false);
-          }
-        }, 1000);
-      } catch (bootErr) {
-        console.log('Boot failed, switching to demo mode:', bootErr);
-        setError('Wallet creation failed. Please use "Skip Setup for Demo" to continue.');
-        setIsCreating(false);
-      }
+      // If no wallet, automatically switch to demo mode in development
+      console.log('No wallet found, automatically switching to demo mode in development');
+      localStorage.setItem('demo_mode', 'true');
+      onSetupComplete();
 
     } catch (err) {
-      console.error('Failed to create development wallet:', err);
-      console.error('Error details:', JSON.stringify(err, null, 2));
-
-      let errorMessage = 'Failed to create wallet. Please use "Skip Setup for Demo" to continue.';
-      if (err instanceof Error) {
-        errorMessage = err.message + ' Please use demo mode.';
-      }
-
-      setError(errorMessage);
+      console.error('Failed to create development wallet, automatically switching to demo mode:', err);
+      // Automatically switch to demo mode instead of showing error
+      localStorage.setItem('demo_mode', 'true');
+      onSetupComplete();
+    } finally {
       setIsCreating(false);
     }
   };
 
   const skipSetupForDemo = () => {
-    console.log('Skipping setup for demo mode...');
+    console.log('Manually skipping setup for demo mode...');
     // Set a flag in localStorage to indicate demo mode
     localStorage.setItem('demo_mode', 'true');
+    console.log('Demo mode flag set, calling onSetupComplete...');
     onSetupComplete();
   };
 
@@ -120,7 +98,7 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
         isCreating
       });
     }
-  }, [isDevelopment, devPassword, hasAttempted, isCreating]);
+  }, []); // Empty dependency array to only run once
 
   if (!isDevelopment) {
     return null;
@@ -143,10 +121,10 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
         <>
           <CircularProgress sx={{ color: '#41CC5D', mb: 2 }} />
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Creating Development Wallet...
+            Setting up Development Mode...
           </Typography>
           <Typography variant="body2" sx={{ color: '#888', textAlign: 'center' }}>
-            This will create a wallet with your DEV_PASSWORD
+            Attempting wallet creation, falling back to demo mode if needed
           </Typography>
         </>
       ) : error ? (

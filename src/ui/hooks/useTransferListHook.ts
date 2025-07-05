@@ -24,13 +24,30 @@ export const useTransferList = () => {
   useEffect(() => {
     let mounted = true;
     const fetchSettings = async () => {
-      const monitor = await wallet.getMonitor();
-      const url = await wallet.getFlowscanUrl();
-      const viewSourceUrl = await wallet.getViewSourceUrl();
-      if (mounted) {
-        setMonitor(monitor);
-        setFlowscanURL(url);
-        setViewSourceURL(viewSourceUrl);
+      try {
+        // In demo mode, skip wallet calls that might fail
+        const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+        if (isDemoMode && process.env.NODE_ENV === 'development') {
+          console.log('Demo mode: skipping wallet settings fetch');
+          return;
+        }
+
+        const monitor = await wallet.getMonitor();
+        const url = await wallet.getFlowscanUrl();
+        const viewSourceUrl = await wallet.getViewSourceUrl();
+        if (mounted) {
+          setMonitor(monitor);
+          setFlowscanURL(url);
+          setViewSourceURL(viewSourceUrl);
+        }
+      } catch (error) {
+        console.log('Error fetching wallet settings:', error);
+        // Set default values in case of error
+        if (mounted) {
+          setMonitor(null);
+          setFlowscanURL(null);
+          setViewSourceURL(null);
+        }
       }
     };
     fetchSettings();
