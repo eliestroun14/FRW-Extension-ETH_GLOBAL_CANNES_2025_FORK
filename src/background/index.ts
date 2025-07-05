@@ -61,26 +61,16 @@ async function initAppMeta() {
   // description.content = i18n.t('appDescription');
   // head?.appendChild(description);
 
-  // Only setup Firebase in production mode
-  if (process.env.NODE_ENV !== 'development') {
-    firebaseSetup();
-  } else {
-    console.log('Development mode: Skipping Firebase initialization completely');
-  }
+  // Setup Firebase if we have valid configuration
+  firebaseSetup();
 
   // note fcl setup is async
   await userWalletService.setupFcl();
 }
 
 async function firebaseSetup() {
-  // In development mode, completely skip Firebase setup
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Development mode: Firebase setup completely skipped');
-    return;
-  }
-
   try {
-    // Dynamic imports to avoid loading Firebase in development
+    // Dynamic imports to avoid loading Firebase when not needed
     const { initializeApp } = await import('firebase/app');
     const {
       getAuth,

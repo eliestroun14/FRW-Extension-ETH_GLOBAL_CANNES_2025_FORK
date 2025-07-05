@@ -58,7 +58,7 @@ import {
     seedWithPathAndPhrase2PublicPrivateKey,
 } from '@/core/utils/modules/publicPrivateKey';
 import { generateRandomId } from '@/core/utils/random-id';
-import { FLOW_BIP44_PATH } from '@/shared/constant/algo-constants';
+import { FLOW_BIP44_PATH, SIGN_ALGO_NUM_DEFAULT } from '@/shared/constant/algo-constants';
 import {
     EVM_ENDPOINT,
     HTTP_STATUS_CONFLICT,
@@ -67,7 +67,7 @@ import {
 } from '@/shared/constant/domain-constants';
 import erc20ABI from '@/shared/constant/erc20.abi.json';
 import { type FeatureFlagKey, type FeatureFlags } from '@/shared/types/feature-types';
-import { type PublicKeyTuple, type PublicPrivateKeyTuple } from '@/shared/types/key-types';
+import { type PublicKeyTuple, type PublicPrivateKeyTuple, tupleToPubKey } from '@/shared/types/key-types';
 import { CURRENT_ID_KEY } from '@/shared/types/keyring-types';
 import {
     type AccountKeyRequest,
@@ -786,6 +786,10 @@ export class WalletController extends BaseController {
     }
     const seedWords = serialized.mnemonic;
     return seedWords;
+  };
+
+  generateMnemonic = (): string => {
+    return keyringService.generateMnemonic();
   };
 
   checkMnemonics = async () => {
@@ -2842,6 +2846,40 @@ export class WalletController extends BaseController {
   setChildAccountDescription = async (address: string, desc: string): Promise<void> => {
     if (!address) return;
     await setCachedData(childAccountDescKey(address), desc, 3600_000);
+  };  /**
+   * Create a local development wallet without backend registration
+   * @param mnemonic - The mnemonic phrase to use
+   * @param password - The password to encrypt the wallet
+   * @returns Promise<void> - Success status
+   */
+  createLocalWallet = async (mnemonic: string, password: string): Promise<void> => {
+    // Generate a unique profile ID for the development wallet
+    const devProfileId = `dev_profile_${Date.now()}`;
+    
+    // Set the current profile ID in storage (required for keyring operations)
+    await storage.set(CURRENT_ID_KEY, devProfileId);
+    console.log('Set development profile ID:', devProfileId);
+    
+    // Generate the public/private key from mnemonic
+    const publicPrivateKey = await seedWithPathAndPhrase2PublicPrivateKey(mnemonic);
+    const pubKeyTuple = formPubKeyTuple(publicPrivateKey);
+    
+    // Use default signing algorithm
+    const signAlgo = SIGN_ALGO_NUM_DEFAULT;
+    const publicKey = tupleToPubKey(pubKeyTuple, signAlgo);
+    
+    // Create the keyring locally
+    await this.createKeyringWithMnemonics(
+      publicKey,
+      signAlgo,
+      password,
+      mnemonic
+    );
+    
+    // Ensure the wallet is booted and unlocked
+    await this.boot(password);
+    
+    console.log('Local wallet created successfully with public key:', publicKey);
   };
 }
 

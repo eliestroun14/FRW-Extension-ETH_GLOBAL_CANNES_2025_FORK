@@ -12,16 +12,21 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAttempted, setHasAttempted] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const isDevelopment = process.env.NODE_ENV === 'development';
   const devPassword = DEFAULT_PASSWORD;
+
+  // Check if another instance is already running
+  const isSetupInProgress = localStorage.getItem('dev_setup_in_progress') === 'true';
 
   console.log('DevAutoSetup initialized:', {
     isDevelopment,
     devPasswordLength: devPassword?.length || 0,
     devPasswordExists: !!devPassword,
     hasAttempted,
-    isCreating
+    isCreating,
+    isSetupInProgress
   });
 
   const createDevWallet = async () => {
@@ -30,11 +35,13 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
       return;
     }
 
-    if (isCreating || hasAttempted) {
+    if (isCreating || hasAttempted || isSetupInProgress) {
       console.log('Wallet creation already in progress or attempted');
       return;
     }
 
+    // Set flag to prevent multiple concurrent setup attempts
+    localStorage.setItem('dev_setup_in_progress', 'true');
     setIsCreating(true);
     setHasAttempted(true);
     setError(null);
@@ -52,26 +59,60 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
         try {
           await wallet.unlock(devPassword);
           console.log('Wallet unlocked successfully!');
+          localStorage.removeItem('demo_mode');
+          localStorage.removeItem('dev_setup_in_progress');
           onSetupComplete();
           return;
         } catch (unlockErr) {
-          console.log('Failed to unlock existing wallet, will try to continue with demo mode:', unlockErr);
-          localStorage.setItem('demo_mode', 'true');
-          onSetupComplete();
+          console.log('Failed to unlock existing wallet:', unlockErr);
+
+          let errorMessage = 'Failed to unlock wallet';
+          if (unlockErr && typeof unlockErr === 'object' && 'message' in unlockErr) {
+            errorMessage = `Failed to unlock wallet: ${unlockErr.message}`;
+          } else {
+            errorMessage = `Failed to unlock wallet: ${unlockErr}`;
+          }
+
+          setError(errorMessage);
+          localStorage.removeItem('dev_setup_in_progress');
           return;
         }
       }
 
-      // If no wallet, automatically switch to demo mode in development
-      console.log('No wallet found, automatically switching to demo mode in development');
-      localStorage.setItem('demo_mode', 'true');
+      // Create a new wallet using local-only creation (no backend registration)
+      console.log('Creating new development wallet...');
+
+      // Generate a mnemonic
+      const mnemonic = await wallet.generateMnemonic();
+      console.log('Generated mnemonic, creating local wallet...');
+
+      // Create the wallet locally without backend registration
+      await wallet.createLocalWallet(mnemonic, devPassword);
+      console.log('Local wallet created successfully!');
+
+      localStorage.removeItem('demo_mode');
+      localStorage.removeItem('dev_setup_in_progress');
       onSetupComplete();
 
     } catch (err) {
-      console.error('Failed to create development wallet, automatically switching to demo mode:', err);
-      // Automatically switch to demo mode instead of showing error
-      localStorage.setItem('demo_mode', 'true');
-      onSetupComplete();
+      console.error('Failed to create development wallet:', err);
+
+      // Provide more detailed error message
+      let errorMessage = 'Failed to create wallet';
+      if (err && typeof err === 'object') {
+        if ('message' in err && typeof err.message === 'string') {
+          errorMessage = `Failed to create wallet: ${err.message}`;
+        } else if ('toString' in err && typeof err.toString === 'function') {
+          errorMessage = `Failed to create wallet: ${err.toString()}`;
+        } else {
+          errorMessage = `Failed to create wallet: ${JSON.stringify(err)}`;
+        }
+      } else if (typeof err === 'string') {
+        errorMessage = `Failed to create wallet: ${err}`;
+      }
+
+      setError(errorMessage);
+      localStorage.removeItem('dev_setup_in_progress');
     } finally {
       setIsCreating(false);
     }
