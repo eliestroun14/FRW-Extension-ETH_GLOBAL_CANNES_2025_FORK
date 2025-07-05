@@ -472,11 +472,17 @@ export class OpenApiService {
       const idToken = await user.getIdToken();
       init.headers['Authorization'] = 'Bearer ' + idToken;
     } else {
-      // If no user, then sign in as anonymous first
-      await signInAnonymously(auth);
-      const anonymousUser = await getAuth(app).currentUser;
-      const idToken = await anonymousUser?.getIdToken();
-      init.headers['Authorization'] = 'Bearer ' + idToken;
+      // In development mode, skip Firebase auth if not properly configured
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: Skipping Firebase authentication');
+        // Continue without auth header
+      } else {
+        // If no user, then sign in as anonymous first
+        await signInAnonymously(auth);
+        const anonymousUser = await getAuth(app).currentUser;
+        const idToken = await anonymousUser?.getIdToken();
+        init.headers['Authorization'] = 'Bearer ' + idToken;
+      }
     }
 
     const response = await fetch(requestUrl, init);

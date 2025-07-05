@@ -15,18 +15,56 @@ class RemoteConfigService {
   };
 
   loadRemoteConfig = async (): Promise<RemoteConfig> => {
-    const result = await openapi.sendRequest(
-      'GET',
-      process.env.API_CONFIG_PATH,
-      {},
-      {},
-      process.env.API_BASE_URL
-    );
+    try {
+      // In development mode, return a default config without making API calls
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: using default remote config');
+        const defaultConfig: RemoteConfig = {
+          version: '1.0.0-dev',
+          config: {
+            features: {},
+            payer: {
+              mainnet: { address: '', keyId: 0 },
+              testnet: { address: '', keyId: 0 },
+              previewnet: { address: '', keyId: 0 },
+              sandboxnet: { address: '', keyId: 0 },
+              crescendo: { address: '', keyId: 0 },
+            },
+          },
+        };
+        setCachedData(remoteConfigKey(), defaultConfig, 600_000);
+        return defaultConfig;
+      }
 
-    const config = result;
+      const result = await openapi.sendRequest(
+        'GET',
+        process.env.API_CONFIG_PATH,
+        {},
+        {},
+        process.env.API_BASE_URL
+      );
 
-    setCachedData(remoteConfigKey(), config, 600_000); // 10 minutes
-    return config;
+      const config = result;
+      setCachedData(remoteConfigKey(), config, 600_000); // 10 minutes
+      return config;
+    } catch (error) {
+      console.warn('Remote config failed, using default config:', error);
+      const defaultConfig: RemoteConfig = {
+        version: '1.0.0-dev',
+        config: {
+          features: {},
+          payer: {
+            mainnet: { address: '', keyId: 0 },
+            testnet: { address: '', keyId: 0 },
+            previewnet: { address: '', keyId: 0 },
+            sandboxnet: { address: '', keyId: 0 },
+            crescendo: { address: '', keyId: 0 },
+          },
+        },
+      };
+      setCachedData(remoteConfigKey(), defaultConfig, 600_000);
+      return defaultConfig;
+    }
   };
 
   getRemoteConfig = async (): Promise<RemoteConfig> => {

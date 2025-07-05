@@ -230,23 +230,33 @@ class UserWallet {
   };
 
   getEmulatorMode = async (): Promise<boolean> => {
-    // Check feature flag first
-    const enableEmulatorMode = await remoteConfigService.getFeatureFlag('emulator_mode');
-    if (!enableEmulatorMode) {
+    try {
+      // Check feature flag first
+      const enableEmulatorMode = await remoteConfigService.getFeatureFlag('emulator_mode');
+      if (!enableEmulatorMode) {
+        return false;
+      }
+      if (!this.store) {
+        throw new Error('UserWallet not initialized');
+      }
+      return this.store.emulatorMode;
+    } catch (error) {
+      console.warn('Failed to get emulator mode from remote config, defaulting to false:', error);
       return false;
     }
-    if (!this.store) {
-      throw new Error('UserWallet not initialized');
-    }
-    return this.store.emulatorMode;
   };
 
   setEmulatorMode = async (emulatorMode: boolean) => {
     let emulatorModeToSet = emulatorMode;
     if (emulatorModeToSet) {
-      // check feature flag
-      const enableEmulatorMode = await remoteConfigService.getFeatureFlag('emulator_mode');
-      if (!enableEmulatorMode) {
+      try {
+        // check feature flag
+        const enableEmulatorMode = await remoteConfigService.getFeatureFlag('emulator_mode');
+        if (!enableEmulatorMode) {
+          emulatorModeToSet = false;
+        }
+      } catch (error) {
+        console.warn('Failed to check emulator mode feature flag, disabling emulator mode:', error);
         emulatorModeToSet = false;
       }
     }
@@ -256,9 +266,14 @@ class UserWallet {
 
   // Moved from WalletController to UserWallet
   allowFreeGas = async (): Promise<boolean> => {
-    const isFreeGasFeeKillSwitch = await remoteConfigService.getFeatureFlag('free_gas');
-    const isFreeGasFeeEnabled = await storage.get('lilicoPayer');
-    return isFreeGasFeeKillSwitch && isFreeGasFeeEnabled;
+    try {
+      const isFreeGasFeeKillSwitch = await remoteConfigService.getFeatureFlag('free_gas');
+      const isFreeGasFeeEnabled = await storage.get('lilicoPayer');
+      return isFreeGasFeeKillSwitch && isFreeGasFeeEnabled;
+    } catch (error) {
+      console.warn('Failed to check free gas feature flag, defaulting to false:', error);
+      return false;
+    }
   };
 
   /**

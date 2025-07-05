@@ -79,6 +79,12 @@ async function firebaseSetup() {
   const env: string = process.env.NODE_ENV!;
   const firebaseConfig = getFirbaseConfig();
 
+  // In development mode, skip Firebase setup if config is incomplete
+  if (env === 'development') {
+    console.log('Development mode: Firebase setup skipped');
+    return;
+  }
+
   const app = initializeApp(firebaseConfig, env);
 
   const auth = getAuth(app);
