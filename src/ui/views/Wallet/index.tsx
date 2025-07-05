@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router';
 import eventBus from '@/shared/utils/message/eventBus';
 import { ButtonRow } from '@/ui/components/ButtonRow';
 import CoinsIcon from '@/ui/components/CoinsIcon';
-import { IconActivity, IconNfts } from '@/ui/components/iconfont';
+import { IconActivity, IconAI, IconNfts } from '@/ui/components/iconfont';
 import LLComingSoon from '@/ui/components/LLComingSoonWarning';
 import { CurrencyValue } from '@/ui/components/TokenLists/CurrencyValue';
 import { useCurrency } from '@/ui/hooks/preference-hooks';
@@ -15,6 +15,7 @@ import { useWallet } from '@/ui/hooks/use-wallet';
 import { useCoins } from '@/ui/hooks/useCoinHook';
 import { useProfiles } from '@/ui/hooks/useProfileHook';
 
+import AIAgent from '../AIAgent';
 import MoveBoard from '../MoveBoard';
 import NFTTab from '../NFT';
 import NftEvm from '../NftEvm';
@@ -61,7 +62,7 @@ const WalletTab = ({ network }) => {
   } = useProfiles();
 
   // This should be set to 2 if the activity tab is selected and should only be set once
-  const [currentTab, setCurrentTab] = useState(location.search.includes('activity') ? 2 : 0);
+  const [currentTab, setCurrentTab] = useState(location.search.includes('activity') ? 2 : location.search.includes('ai') ? 3 : 0);
 
   const [alertOpen, setAlertOpen] = useState<boolean>(false);
   const [showOnRamp, setShowOnRamp] = useState(false);
@@ -288,6 +289,31 @@ const WalletTab = ({ network }) => {
             </Typography>
           }
         />
+        <Tab
+          icon={
+            <IconAI
+              sx={{
+                width: '20px',
+                height: '20px',
+                color: currentTab === 3 ? '#FFFFFF' : '#777E90',
+              }}
+            />
+          }
+          iconPosition="start"
+          label={
+            <Typography
+              variant="body1"
+              sx={{
+                textTransform: 'capitalize',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: currentTab === 3 ? '#FFFFFF' : '#777E90',
+              }}
+            >
+              AI Agent
+            </Typography>
+          }
+        />
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         <TabPanel value={currentTab} index={0}>
@@ -309,6 +335,11 @@ const WalletTab = ({ network }) => {
         <TabPanel value={currentTab} index={2}>
           <Box sx={{ height: '100%', overflow: 'auto' }}>
             {currentTab === 2 && <TransferList />}
+          </Box>
+        </TabPanel>
+        <TabPanel value={currentTab} index={3}>
+          <Box sx={{ height: '100%', overflow: 'auto' }}>
+            {currentTab === 3 && <AIAgent />}
           </Box>
         </TabPanel>
       </Box>

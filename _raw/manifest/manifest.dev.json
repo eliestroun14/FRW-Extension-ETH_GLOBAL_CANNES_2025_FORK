@@ -40,7 +40,7 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self' 'wasm-unsafe-eval';"
   },
-  "permissions": ["storage", "activeTab", "tabs", "notifications", "identity", "camera"],
+  "permissions": ["storage", "activeTab", "tabs", "notifications", "identity"],
   "host_permissions": ["https://api.mixpanel.com/*"],
   "web_accessible_resources": [
     {

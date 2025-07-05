@@ -1,11 +1,11 @@
 import { ethErrors } from 'eth-rpc-errors';
 import { initializeApp } from 'firebase/app';
 import {
-  getAuth,
-  indexedDBLocalPersistence,
-  onAuthStateChanged,
-  setPersistence,
-  signInAnonymously,
+    getAuth,
+    indexedDBLocalPersistence,
+    onAuthStateChanged,
+    setPersistence,
+    signInAnonymously,
 } from 'firebase/auth/web-extension';
 import 'reflect-metadata';
 
@@ -21,24 +21,24 @@ import { Message } from '@/shared/utils/messaging';
 import storage from '@/shared/utils/storage';
 
 import {
-  addressBookService,
-  coinListService,
-  evmNftService,
-  googleSafeHostService,
-  keyringService,
-  logListener,
-  mixpanelTrack,
-  newsService,
-  nftService,
-  openapiService,
-  permissionService,
-  preferenceService,
-  remoteConfigService,
-  sessionService,
-  tokenListService,
-  transactionService,
-  userInfoService,
-  userWalletService,
+    addressBookService,
+    coinListService,
+    evmNftService,
+    googleSafeHostService,
+    keyringService,
+    logListener,
+    mixpanelTrack,
+    newsService,
+    nftService,
+    openapiService,
+    permissionService,
+    preferenceService,
+    remoteConfigService,
+    sessionService,
+    tokenListService,
+    transactionService,
+    userInfoService,
+    userWalletService,
 } from '../core/service';
 import { getFirbaseConfig } from '../core/utils/firebaseConfig';
 import { setEnvironmentBadge } from '../core/utils/setEnvironmentBadge';
@@ -69,31 +69,47 @@ async function initAppMeta() {
   // description.content = i18n.t('appDescription');
   // head?.appendChild(description);
 
-  firebaseSetup();
+  try {
+    await firebaseSetup();
+  } catch (error) {
+    consoleError('Failed to setup Firebase in initAppMeta:', error);
+  }
 
   // note fcl setup is async
   await userWalletService.setupFcl();
 }
 
 async function firebaseSetup() {
-  const env: string = process.env.NODE_ENV!;
-  const firebaseConfig = getFirbaseConfig();
+  try {
+    const env: string = process.env.NODE_ENV!;
+    const firebaseConfig = getFirbaseConfig();
 
-  const app = initializeApp(firebaseConfig, env);
-
-  const auth = getAuth(app);
-  setPersistence(auth, indexedDBLocalPersistence);
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // User is signed in, see docs for a list of available properties
-      // https://firebase.google.com/docs/reference/js/firebase.User
-      // note fcl setup is async
-      userWalletService.setupFcl();
-    } else {
-      // User is signed out
-      signInAnonymously(auth);
+    // Skip Firebase setup if config is not available (development mode)
+    if (!firebaseConfig || !firebaseConfig.apiKey) {
+      consoleLog('Firebase config not available, skipping Firebase setup (development mode)');
+      return;
     }
-  });
+
+    const app = initializeApp(firebaseConfig, env);
+
+    const auth = getAuth(app);
+    setPersistence(auth, indexedDBLocalPersistence);
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        // note fcl setup is async
+        userWalletService.setupFcl();
+      } else {
+        // User is signed out - try to sign in anonymously
+        signInAnonymously(auth).catch((error) => {
+          consoleError('Failed to sign in anonymously to Firebase:', error);
+        });
+      }
+    });
+  } catch (error) {
+    consoleError('Firebase setup failed, continuing without Firebase (development mode):', error);
+  }
 }
 
 async function restoreAppState() {

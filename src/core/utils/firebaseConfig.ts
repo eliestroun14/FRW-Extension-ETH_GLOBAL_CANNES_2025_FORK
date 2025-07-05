@@ -1,4 +1,11 @@
 export function getFirbaseConfig() {
+  // In development mode, don't use Firebase unless we have a valid project
+  if (process.env.NODE_ENV === 'development') {
+    // Only use Firebase in development if we have a working project
+    // For hackathon/demo purposes, disable Firebase to avoid errors
+    return null;
+  }
+
   const firebaseConfig = {
     apiKey: process.env.FB_API_KEY,
     authDomain: process.env.FB_AUTH_DOMAIN,

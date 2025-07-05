@@ -6,29 +6,27 @@ import { ethErrors } from 'eth-rpc-errors';
 import * as ethUtil from 'ethereumjs-util';
 import { getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth/web-extension';
-import { encode } from 'rlp';
-import web3, { TransactionError, Web3 } from 'web3';
+import { TransactionError, Web3 } from 'web3';
 
 import notification from '@/background/webapi/notification';
 import { openIndexPage } from '@/background/webapi/tab';
 import {
-  addressBookService,
-  coinListService,
-  evmNftService,
-  googleDriveService,
-  keyringService,
-  mixpanelTrack,
-  newsService,
-  nftService,
-  openapiService,
-  permissionService,
-  preferenceService,
-  remoteConfigService,
-  sessionService,
-  tokenListService,
-  transactionService,
-  userInfoService,
-  userWalletService,
+    addressBookService,
+    coinListService,
+    evmNftService,
+    googleDriveService,
+    keyringService,
+    mixpanelTrack,
+    newsService,
+    nftService,
+    openapiService,
+    permissionService,
+    preferenceService,
+    remoteConfigService,
+    sessionService,
+    transactionService,
+    userInfoService,
+    userWalletService
 } from '@/core/service';
 import { type Keyring, KEYRING_CLASS, type KeyringType } from '@/core/service/keyring';
 import { HDKeyring } from '@/core/service/keyring/hdKeyring';
@@ -36,107 +34,99 @@ import { getScripts } from '@/core/service/openapi';
 import type { ConnectedSite } from '@/core/service/permission';
 import type { PreferenceAccount } from '@/core/service/preference';
 import {
-  addPendingAccountCreationTransaction,
-  addPlaceholderAccount,
-  loadAccountBalance,
-  removePendingAccountCreationTransaction,
+    addPendingAccountCreationTransaction,
+    addPlaceholderAccount,
+    removePendingAccountCreationTransaction
 } from '@/core/service/userWallet';
-import { replaceNftKeywords } from '@/core/utils';
 import {
-  getAccountKey,
-  pubKeyAccountToAccountKey,
-  pubKeySignAlgoToAccountKey,
+    getAccountKey,
+    pubKeyAccountToAccountKey,
+    pubKeySignAlgoToAccountKey,
 } from '@/core/utils/account-key';
 import {
-  getValidData,
-  registerRefreshListener,
-  setCachedData,
-  triggerRefresh,
+    getValidData,
+    registerRefreshListener,
+    setCachedData,
+    triggerRefresh,
 } from '@/core/utils/data-cache';
 import { findAddressWithPK, findAddressWithSeed } from '@/core/utils/modules/findAddressWithPK';
 import { getOrCheckAccountsByPublicKeyTuple } from '@/core/utils/modules/findAddressWithPubKey';
 import {
-  formPubKeyTuple,
-  jsonToKey,
-  pk2PubKeyTuple,
-  seedWithPathAndPhrase2PublicPrivateKey,
+    formPubKeyTuple,
+    jsonToKey,
+    pk2PubKeyTuple,
+    seedWithPathAndPhrase2PublicPrivateKey,
 } from '@/core/utils/modules/publicPrivateKey';
 import { generateRandomId } from '@/core/utils/random-id';
 import { FLOW_BIP44_PATH } from '@/shared/constant/algo-constants';
 import {
-  EVM_ENDPOINT,
-  HTTP_STATUS_CONFLICT,
-  HTTP_STATUS_TOO_MANY_REQUESTS,
-  INTERNAL_REQUEST_ORIGIN,
+    EVM_ENDPOINT,
+    HTTP_STATUS_CONFLICT,
+    HTTP_STATUS_TOO_MANY_REQUESTS,
+    INTERNAL_REQUEST_ORIGIN,
 } from '@/shared/constant/domain-constants';
 import erc20ABI from '@/shared/constant/erc20.abi.json';
-import { type CustomFungibleTokenInfo } from '@/shared/types/coin-types';
 import { type FeatureFlagKey, type FeatureFlags } from '@/shared/types/feature-types';
 import { type PublicKeyTuple, type PublicPrivateKeyTuple } from '@/shared/types/key-types';
 import { CURRENT_ID_KEY } from '@/shared/types/keyring-types';
 import {
-  type AccountKeyRequest,
-  type Contact,
-  ContactType,
-  type FlowNetwork,
-  MAINNET_CHAIN_ID,
-  type NFTModelV2,
-  Period,
-  PriceProvider,
-  type TokenPriceHistory,
-  type UserInfoResponse,
+    type AccountKeyRequest,
+    type Contact,
+    ContactType,
+    type FlowNetwork,
+    MAINNET_CHAIN_ID,
+    type NFTModelV2,
+    type UserInfoResponse
 } from '@/shared/types/network-types';
 import { type NFTCollectionData, type NFTCollections } from '@/shared/types/nft-types';
 import { type TokenInfo } from '@/shared/types/token-info';
 import { type TrackingEvents } from '@/shared/types/tracking-types';
 import { type TransactionState, type TransferItem } from '@/shared/types/transaction-types';
 import {
-  type ActiveAccountType,
-  type ActiveChildType_depreciated,
-  type Currency,
-  type EvmAddress,
-  type FlowAddress,
-  type LoggedInAccount,
-  type MainAccount,
-  type ProfileBackupStatus,
-  type PublicKeyAccount,
-  type WalletAccount,
-  type WalletAddress,
+    type ActiveAccountType,
+    type ActiveChildType_depreciated,
+    type Currency,
+    type EvmAddress,
+    type FlowAddress,
+    type LoggedInAccount,
+    type MainAccount,
+    type ProfileBackupStatus,
+    type PublicKeyAccount,
+    type WalletAccount,
+    type WalletAddress,
 } from '@/shared/types/wallet-types';
 import {
-  ensureEvmAddressPrefix,
-  isValidAddress,
-  isValidEthereumAddress,
-  isValidFlowAddress,
-  withPrefix,
+    ensureEvmAddressPrefix,
+    isValidAddress,
+    isValidEthereumAddress,
+    isValidFlowAddress,
+    withPrefix,
 } from '@/shared/utils/address';
 import { getStringFromHashAlgo, getStringFromSignAlgo } from '@/shared/utils/algo';
 import {
-  accountBalanceKey,
-  childAccountAllowTypesKey,
-  childAccountDescKey,
-  type ChildAccountFtStore,
-  childAccountNftsKey,
-  type ChildAccountNFTsStore,
-  coinListKey,
-  evmNftCollectionListKey,
-  type EvmNftCollectionListStore,
-  evmNftIdsKey,
-  type EvmNftIdsStore,
-  getCachedNftCollection,
-  getCachedScripts,
-  mainAccountsKey,
-  nftCatalogCollectionsKey,
-  registerStatusKey,
-  registerStatusRefreshRegex,
-  userMetadataKey,
-  walletLoadedKey,
-  walletLoadedRefreshRegex,
+    accountBalanceKey,
+    childAccountDescKey,
+    type ChildAccountFtStore,
+    childAccountNftsKey,
+    type ChildAccountNFTsStore,
+    coinListKey,
+    evmNftCollectionListKey,
+    type EvmNftCollectionListStore,
+    evmNftIdsKey,
+    type EvmNftIdsStore,
+    getCachedNftCollection,
+    getCachedScripts,
+    mainAccountsKey,
+    nftCatalogCollectionsKey,
+    registerStatusKey,
+    registerStatusRefreshRegex,
+    userMetadataKey,
+    walletLoadedKey,
+    walletLoadedRefreshRegex
 } from '@/shared/utils/cache-data-keys';
 import { consoleError, consoleWarn } from '@/shared/utils/console-log';
 import { returnCurrentProfileId } from '@/shared/utils/current-id';
 import { getEmojiList } from '@/shared/utils/emoji-util';
-import { getPeriodFrequency } from '@/shared/utils/getPeriodFrequency';
 import eventBus from '@/shared/utils/message/eventBus';
 import { convertToIntegerAmount, validateAmount } from '@/shared/utils/number';
 import { retryOperation } from '@/shared/utils/retryOperation';
@@ -1534,7 +1524,7 @@ export class WalletController extends BaseController {
           .encodeABI();
         gas = '1312d00';
         address = ensureEvmAddressPrefix(transactionState.tokenInfo.address);
-        value = '0x0'; // Zero value as hex
+        value = '0x0' // Zero value as hex
         data = encodedData.startsWith('0x') ? encodedData : `0x${encodedData}`;
       }
 
@@ -1808,6 +1798,7 @@ export class WalletController extends BaseController {
     const txID = await userWalletService.sendTransaction(script, [
       fcl.arg(flowIdentifier, fcl.t.String),
       fcl.arg(integerAmountStr, fcl.t.UInt256),
+      fcl.arg(receiver, fcl.t.Address),
     ]);
 
     mixpanelTrack.track('ft_transfer', {
@@ -1818,950 +1809,6 @@ export class WalletController extends BaseController {
       type: 'flow',
     });
 
-    return txID;
-  };
-
-  queryEvmAddress = async (address: string | FlowAddress): Promise<string | null> => {
-    const evmAccount = await userWalletService.getEvmAccountOfParent(address as string);
-    return evmAccount?.address ?? null;
-  };
-
-  /**
-   *
-   * @returns
-   * @deprecated use canMoveToOtherAccount from useProfiles
-   */
-  checkCanMoveChild = async () => {
-    const activeAccountType = await this.getActiveAccountType();
-    if (activeAccountType !== 'child') {
-      const evmAddress = await userWalletService.getCurrentEvmAddress();
-      const childResp = await userWalletService.getChildAccounts();
-
-      if (evmAddress !== null || (childResp && childResp?.length > 0)) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  sendEvmTransaction = async (to: string, gas: string | number, value: string, data: string) => {
-    if (to.startsWith('0x')) {
-      to = to.substring(2);
-    }
-    await this.getNetwork();
-
-    const script = await getScripts(userWalletService.getNetwork(), 'evm', 'callContractV2');
-    const gasLimit = 30000000;
-    const dataBuffer = Buffer.from(data.slice(2), 'hex');
-    const dataArray = Uint8Array.from(dataBuffer);
-    const regularArray = Array.from(dataArray);
-
-    // Handle the case where the value is '0.0'
-    if (/^0\.0+$/.test(value)) {
-      value = '0x0';
-    }
-
-    if (!value.startsWith('0x')) {
-      value = '0x' + value;
-    }
-
-    // At this point the value should be a valid hex string. Check to make sure
-    if (!/^0x[0-9a-fA-F]+$/.test(value)) {
-      throw new Error('Invalid hex string value');
-    }
-
-    // Convert hex to BigInt
-    const transactionValue = value === '0x' ? BigInt(0) : BigInt(value);
-
-    const result = await userWalletService.sendTransaction(script, [
-      fcl.arg(to, fcl.t.String),
-      fcl.arg(transactionValue.toString(), fcl.t.UInt256),
-      fcl.arg(regularArray, fcl.t.Array(fcl.t.UInt8)),
-      fcl.arg(gasLimit, fcl.t.UInt64),
-    ]);
-
-    mixpanelTrack.track('ft_transfer', {
-      from_address: (await this.getRawEvmAddressWithPrefix()) ?? '',
-      to_address: to,
-      amount: value,
-      ft_identifier: 'FLOW',
-      type: 'evm',
-    });
-
-    return result;
-  };
-
-  dapSendEvmTX = async (to: string, gas: bigint, value: string, data: string) => {
-    if (to.startsWith('0x')) {
-      to = to.substring(2);
-    }
-    await this.getNetwork();
-
-    const script = await getScripts(userWalletService.getNetwork(), 'evm', 'callContractV2');
-    const gasLimit = gas || 30000000;
-    const dataBuffer = Buffer.from(data.slice(2), 'hex');
-    const dataArray = Uint8Array.from(dataBuffer);
-    const regularArray = Array.from(dataArray);
-
-    // Handle the case where the value is '0.0'
-    if (/^0\.0+$/.test(value)) {
-      value = '0x0';
-    }
-
-    if (!value.startsWith('0x')) {
-      value = '0x' + value;
-    }
-
-    // Check if the value is a string
-    if (typeof value === 'string') {
-      // Check if it starts with '0x'
-      if (value.startsWith('0x')) {
-        // If it's hex without '0x', add '0x'
-        if (!/^0x[0-9a-fA-F]+$/.test(value)) {
-          value = '0x' + value.replace(/^0x/, '');
-        }
-      } else {
-        // If it's a regular string, convert to hex
-        value = web3.utils.toHex(value);
-      }
-    }
-    // At this point the value should be a valid hex string. Check to make sure
-    if (!/^0x[0-9a-fA-F]+$/.test(value)) {
-      throw new Error('Invalid hex string value');
-    }
-    // Convert hex to BigInt directly to avoid potential number overflow
-    const transactionValue = value === '0x' ? BigInt(0) : BigInt(value);
-
-    await userWalletService.sendTransaction(script, [
-      fcl.arg(to, fcl.t.String),
-      fcl.arg(transactionValue.toString(), fcl.t.UInt256),
-      fcl.arg(regularArray, fcl.t.Array(fcl.t.UInt8)),
-      fcl.arg(gasLimit.toString(), fcl.t.UInt64),
-    ]);
-
-    let evmAddress = await this.getEvmAddress();
-
-    mixpanelTrack.track('ft_transfer', {
-      from_address: evmAddress,
-      to_address: to,
-      amount: transactionValue.toString(),
-      ft_identifier: 'FLOW',
-      type: 'evm',
-    });
-
-    if (evmAddress.startsWith('0x')) {
-      evmAddress = evmAddress.substring(2) as EvmAddress;
-    }
-
-    const addressNonce = await this.getNonce(evmAddress);
-
-    const keccak256 = (data: Buffer) => {
-      return ethUtil.keccak256(data);
-    };
-
-    // [nonce, gasPrice, gasLimit, to.addressData, value, data, v, r, s]
-
-    const directCallTxType = 255;
-    const contractCallSubType = 5;
-    const noceNumber = Number(addressNonce);
-    const gasPrice = 0;
-    const transaction = [
-      noceNumber, // nonce
-      gasPrice, // Fixed value
-      gasLimit, // Gas Limit
-      Buffer.from(to, 'hex'), // To Address
-      transactionValue, // Value
-      Buffer.from(dataArray), // Call Data
-      directCallTxType, // Fixed value
-      BigInt('0x' + evmAddress), // From Account
-      contractCallSubType, // SubType
-    ];
-    const encodedData = encode(transaction);
-    const hash = keccak256(Buffer.from(encodedData));
-    const hashHexString = Buffer.from(hash).toString('hex');
-    if (hashHexString) {
-      return hashHexString;
-    } else {
-      return null;
-    }
-  };
-
-  /**
-   * Get the balance of a list of accounts
-   * @param addresses - The list of addresses to get the balance for
-   * @returns The balance of the accounts
-   * @deprecated Use {@link userWallets.loadAccountListBalance} instead
-   */
-  getAllAccountBalance = async (addresses: string[]): Promise<string> => {
-    await this.getNetwork();
-
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'basic',
-      'getFlowBalanceForAnyAccounts'
-    );
-
-    const result = await fcl.query({
-      cadence: script,
-      args: (arg, t) => [arg(addresses, t.Array(t.String))],
-    });
-    return result;
-  };
-
-  getEvmBalance = async (hexEncodedAddress: string): Promise<string> => {
-    const network = await this.getNetwork();
-    const balance = await getValidData<string>(accountBalanceKey(network, hexEncodedAddress));
-    if (!balance) {
-      return await loadAccountBalance(network, hexEncodedAddress);
-    }
-    return balance;
-  };
-
-  getFlowBalance = async (address: string): Promise<string> => {
-    const network = await this.getNetwork();
-    const balance = await getValidData<string>(accountBalanceKey(network, address));
-    if (!balance) {
-      return await loadAccountBalance(network, address);
-    }
-    return balance;
-  };
-
-  getAllNft = async (): Promise<NFTModelV2[]> => {
-    const network = await this.getNetwork();
-    const childType = await this.getActiveAccountType();
-    let chainType: 'evm' | 'flow' = 'flow';
-    if (childType === 'evm') {
-      chainType = 'evm';
-    }
-    return await nftService.getNftList(network, chainType);
-  };
-
-  getNonce = async (hexEncodedAddress: string): Promise<string> => {
-    await this.getNetwork();
-
-    const script = await getScripts(userWalletService.getNetwork(), 'evm', 'getNonce');
-
-    const result = await fcl.query({
-      cadence: script,
-      args: (arg, t) => [arg(hexEncodedAddress, t.String)],
-    });
-    return result;
-  };
-
-  getChildAccounts = async (): Promise<WalletAccount[] | null> => {
-    return await userWalletService.getChildAccounts();
-  };
-
-  unlinkChildAccount = async (address: string): Promise<string> => {
-    await this.getNetwork();
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'getChildAccountMeta'
-    );
-
-    return await userWalletService.sendTransaction(script, [fcl.arg(address, fcl.t.Address)]);
-  };
-
-  unlinkChildAccountV2 = async (address: string): Promise<string> => {
-    await this.getNetwork();
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'unlinkChildAccount'
-    );
-
-    return await userWalletService.sendTransaction(script, [fcl.arg(address, fcl.t.Address)]);
-  };
-
-  editChildAccount = async (
-    address: string,
-    name: string,
-    description: string,
-    thumbnail: string
-  ): Promise<string> => {
-    await this.getNetwork();
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'editChildAccount'
-    );
-
-    return await userWalletService.sendTransaction(script, [
-      fcl.arg(address, fcl.t.Address),
-      fcl.arg(name, fcl.t.String),
-      fcl.arg(description, fcl.t.String),
-      fcl.arg(thumbnail, fcl.t.String),
-    ]);
-  };
-
-  getTokenInfo = async (symbol: string): Promise<CustomFungibleTokenInfo | undefined> => {
-    const network = await this.getNetwork();
-    const activeAccountType = await this.getActiveAccountType();
-    return await tokenListService.getTokenInfo(
-      network,
-      activeAccountType === 'evm' ? 'evm' : 'flow',
-      symbol
-    );
-  };
-
-  /**
-   * Get the price of a token
-   * @param token - The token to get the price for
-   * @param provider - The provider to get the price from
-   * @returns The price of the token
-   */
-  getTokenPrice = async (token: string, provider = PriceProvider.binance) => {
-    return await openapiService.getTokenPrice(token, provider);
-  };
-
-  /**
-   * Get the price history of a token
-   * @param token - The token to get the price history for
-   * @param period - The period to get the price history for
-   * @param provider - The provider to get the price history from
-   * @returns The price history of the token
-   */
-  getTokenPriceHistory = async (
-    token: string,
-    period = Period.oneDay,
-    provider = PriceProvider.binance
-  ): Promise<TokenPriceHistory[]> => {
-    const rawPriceHistory = await openapiService.getTokenPriceHistoryArray(token, period, provider);
-    const frequency = getPeriodFrequency(period);
-    if (!rawPriceHistory[frequency]) {
-      throw new Error('No price history found for this period');
-    }
-
-    return rawPriceHistory[frequency].map((item) => ({
-      closeTime: item[0],
-      openPrice: item[1],
-      highPrice: item[2],
-      lowPrice: item[3],
-      price: item[4],
-      volume: item[5],
-      quoteVolume: item[6],
-    }));
-  };
-
-  addCustomEvmToken = async (network: string, token: CustomFungibleTokenInfo) => {
-    return await tokenListService.addCustomEvmToken(network, token);
-  };
-
-  removeCustomEvmToken = async (network: string, tokenAddress: string) => {
-    return await tokenListService.removeCustomEvmToken(network, tokenAddress);
-  };
-
-  // TODO: Replace with generic token
-  transferCadenceTokens = async (
-    symbol: string,
-    address: string,
-    amount: string
-  ): Promise<string> => {
-    const token = await this.getTokenInfo(symbol);
-    const script = await getScripts(userWalletService.getNetwork(), 'ft', 'transferTokensV3');
-
-    if (!token) {
-      throw new Error(`Invaild token name - ${symbol}`);
-    }
-    // Validate the amount just to be safe
-    if (!validateAmount(amount, token.decimals)) {
-      throw new Error(`Invalid amount - ${amount}`);
-    }
-
-    await this.getNetwork();
-
-    if (!token.contractName || !token.path || !token.address) {
-      throw new Error('Invalid token');
-    }
-    const txID = await userWalletService.sendTransaction(
-      script
-        .replaceAll('<Token>', token.contractName)
-        .replaceAll('<TokenBalancePath>', token.path.balance)
-        .replaceAll('<TokenReceiverPath>', token.path.receiver)
-        .replaceAll('<TokenStoragePath>', token.path.vault)
-        .replaceAll('<TokenAddress>', token.address),
-      [fcl.arg(amount, fcl.t.UFix64), fcl.arg(address, fcl.t.Address)]
-    );
-
-    mixpanelTrack.track('ft_transfer', {
-      from_address: (await this.getCurrentAddress()) || '',
-      to_address: address,
-      amount: amount,
-      ft_identifier: token.contractName,
-      type: 'flow',
-    });
-
-    return txID;
-  };
-
-  revokeKey = async (index: string): Promise<string> => {
-    const script = await getScripts(userWalletService.getNetwork(), 'basic', 'revokeKey');
-
-    return await userWalletService.sendTransaction(script, [fcl.arg(index, fcl.t.Int)]);
-  };
-
-  addKeyToAccount = async (
-    publicKey: string,
-    signatureAlgorithm: number,
-    hashAlgorithm: number,
-    weight: number
-  ): Promise<string> => {
-    return await userWalletService.sendTransaction(
-      `
-      import Crypto
-      transaction(publicKey: String, signatureAlgorithm: UInt8, hashAlgorithm: UInt8, weight: UFix64) {
-          prepare(signer: AuthAccount) {
-              let key = PublicKey(
-                  publicKey: publicKey.decodeHex(),
-                  signatureAlgorithm: SignatureAlgorithm(rawValue: signatureAlgorithm)!
-              )
-              signer.keys.add(
-                  publicKey: key,
-                  hashAlgorithm: HashAlgorithm(rawValue: hashAlgorithm)!,
-                  weight: weight
-              )
-          }
-      }
-      `,
-      [
-        fcl.arg(publicKey, fcl.t.String),
-        fcl.arg(signatureAlgorithm, fcl.t.UInt8),
-        fcl.arg(hashAlgorithm, fcl.t.UInt8),
-        fcl.arg(weight.toFixed(1), fcl.t.UFix64),
-      ]
-    );
-  };
-
-  enableTokenStorage = async (symbol: string) => {
-    const token = await this.getTokenInfo(symbol);
-    if (!token) {
-      return;
-    }
-    await this.getNetwork();
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'storage',
-      'enableTokenStorage'
-    );
-    if (!token.contractName || !token.path || !token.address) {
-      throw new Error('Invalid token');
-    }
-
-    return await userWalletService.sendTransaction(
-      script
-        .replaceAll('<Token>', token.contractName)
-        .replaceAll('<TokenBalancePath>', token.path.balance)
-        .replaceAll('<TokenReceiverPath>', token.path.receiver)
-        .replaceAll('<TokenStoragePath>', token.path.vault)
-        .replaceAll('<TokenAddress>', token.address),
-      []
-    );
-  };
-
-  enableNFTStorageLocal = async (token: NFTModelV2) => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'collection',
-      'enableNFTStorage'
-    );
-
-    return await userWalletService.sendTransaction(
-      script
-        .replaceAll('<NFT>', token.contractName)
-        .replaceAll('<NFTAddress>', token.address)
-        .replaceAll('<CollectionStoragePath>', token.path.storage)
-        .replaceAll('<CollectionPublicType>', token.path.public)
-        .replaceAll('<CollectionPublicPath>', token.path.public),
-      []
-    );
-  };
-
-  moveFTfromChild = async (
-    childAddress: string,
-    path: string,
-    amount: string,
-    symbol: string
-  ): Promise<string> => {
-    const token = await this.getTokenInfo(symbol);
-    if (!token) {
-      throw new Error(`Invaild token name - ${symbol}`);
-    }
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'transferChildFT'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-
-    const result = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(childAddress, fcl.t.Address),
-      fcl.arg(path, fcl.t.String),
-      fcl.arg(amount, fcl.t.UFix64),
-    ]);
-    mixpanelTrack.track('ft_transfer', {
-      from_address: (await this.getCurrentAddress()) || '',
-      to_address: childAddress,
-      amount: amount,
-      ft_identifier: 'flow',
-      type: 'flow',
-    });
-    return result;
-  };
-
-  sendFTfromChild = async (
-    childAddress: string,
-    receiver: string,
-    path: string,
-    amount: string,
-    symbol: string
-  ): Promise<string> => {
-    const token = await this.getTokenInfo(symbol);
-    if (!token) {
-      throw new Error(`Invaild token name - ${symbol}`);
-    }
-    // Validate the amount just to be safe
-    if (!validateAmount(amount, token.decimals)) {
-      throw new Error(`Invalid amount - ${amount}`);
-    }
-
-    const script = await getScripts(userWalletService.getNetwork(), 'hybridCustody', 'sendChildFT');
-    const replacedScript = replaceNftKeywords(script, token);
-
-    const result = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(childAddress, fcl.t.Address),
-      fcl.arg(receiver, fcl.t.Address),
-      fcl.arg(path, fcl.t.String),
-      fcl.arg(amount, fcl.t.UFix64),
-    ]);
-    mixpanelTrack.track('ft_transfer', {
-      from_address: childAddress,
-      to_address: receiver,
-      amount: amount,
-      ft_identifier: 'flow',
-      type: 'flow',
-    });
-    return result;
-  };
-
-  moveNFTfromChild = async (
-    nftContractAddress: string,
-    nftContractName: string,
-    ids: number,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'transferChildNFT'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(nftContractAddress, fcl.t.Address),
-      fcl.arg(nftContractName, fcl.t.String),
-      fcl.arg(ids, fcl.t.UInt64),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: nftContractAddress,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: token.contractName,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: true,
-    });
-    return txID;
-  };
-
-  sendNFTfromChild = async (
-    linkedAddress: string,
-    receiverAddress: string,
-    nftContractName: string,
-    ids: number,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'sendChildNFT'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(linkedAddress, fcl.t.Address),
-      fcl.arg(receiverAddress, fcl.t.Address),
-      fcl.arg(nftContractName, fcl.t.String),
-      fcl.arg(ids, fcl.t.UInt64),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: linkedAddress,
-      to_address: receiverAddress,
-      nft_identifier: token.contractName,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  bridgeChildNFTToEvmAddress = async (
-    linkedAddress: string,
-    receiverAddress: string,
-    nftContractName: string,
-    id: number,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'bridgeChildNFTToEvmAddress'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(nftContractName, fcl.t.String),
-      fcl.arg(linkedAddress, fcl.t.Address),
-      fcl.arg(id, fcl.t.UInt64),
-      fcl.arg(receiverAddress, fcl.t.String),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: linkedAddress,
-      to_address: receiverAddress,
-      nft_identifier: token.contractName,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  sendNFTtoChild = async (
-    linkedAddress: string,
-    path: string,
-    ids: number,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'transferNFTToChild'
-    );
-    const walletAddress = withPrefix(linkedAddress);
-    if (!walletAddress) {
-      throw new Error(`Invalid linked address - ${linkedAddress}`);
-    }
-    const replacedScript = replaceNftKeywords(script, token);
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(walletAddress, fcl.t.Address),
-      fcl.arg(path, fcl.t.String),
-      fcl.arg(ids, fcl.t.UInt64),
-    ]);
-
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: linkedAddress,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: token.contractName,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  getChildAccountAllowTypes = async (
-    parentAddress: string,
-    childAddress: string
-  ): Promise<string[]> => {
-    const network = userWalletService.getNetwork();
-
-    const cachedData = await getValidData<string[]>(
-      childAccountAllowTypesKey(network, parentAddress, childAddress)
-    );
-    if (cachedData) {
-      return cachedData;
-    }
-    return nftService.loadChildAccountAllowTypes(network, parentAddress, childAddress);
-  };
-
-  checkChildLinkedVault = async (parent: string, child: string, path: string): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'checkChildLinkedVaults'
-    );
-
-    const result = await fcl.query({
-      cadence: script,
-      args: (arg, t) => [arg(parent, t.Address), arg(child, t.Address), fcl.arg(path, t.String)],
-    });
-    return result;
-  };
-
-  batchBridgeNftToEvm = async (flowIdentifier: string, ids: Array<number>): Promise<string> => {
-    const shouldCoverBridgeFee = await remoteConfigService.getFeatureFlag('cover_bridge_fee');
-    const scriptName = shouldCoverBridgeFee
-      ? 'batchBridgeNFTToEvmWithPayer'
-      : 'batchBridgeNFTToEvmV2';
-    const script = await getScripts(userWalletService.getNetwork(), 'bridge', scriptName);
-
-    const txID = await userWalletService.sendTransaction(
-      script,
-      [fcl.arg(flowIdentifier, fcl.t.String), fcl.arg(ids, fcl.t.Array(fcl.t.UInt64))],
-      shouldCoverBridgeFee
-    );
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: flowIdentifier,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: flowIdentifier,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  batchBridgeNftFromEvm = async (flowIdentifier: string, ids: Array<number>): Promise<string> => {
-    const shouldCoverBridgeFee = await remoteConfigService.getFeatureFlag('cover_bridge_fee');
-    const scriptName = shouldCoverBridgeFee
-      ? 'batchBridgeNFTFromEvmWithPayer'
-      : 'batchBridgeNFTFromEvmV2';
-    const script = await getScripts(userWalletService.getNetwork(), 'bridge', scriptName);
-
-    const txID = await userWalletService.sendTransaction(
-      script,
-      [fcl.arg(flowIdentifier, fcl.t.String), fcl.arg(ids, fcl.t.Array(fcl.t.UInt256))],
-      shouldCoverBridgeFee
-    );
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: flowIdentifier,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: flowIdentifier,
-      from_type: 'flow',
-      to_type: 'evm',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  batchTransferNFTToChild = async (
-    childAddr: string,
-    identifier: string,
-    ids: Array<number>,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'batchTransferNFTToChild'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(childAddr, fcl.t.Address),
-      fcl.arg(identifier, fcl.t.String),
-      fcl.arg(ids, fcl.t.Array(fcl.t.UInt64)),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: childAddr,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: identifier,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  batchTransferChildNft = async (
-    childAddr: string,
-    identifier: string,
-    ids: Array<number>,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'batchTransferChildNFT'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(childAddr, fcl.t.Address),
-      fcl.arg(identifier, fcl.t.String),
-      fcl.arg(ids, fcl.t.Array(fcl.t.UInt64)),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: childAddr,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: identifier,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  sendChildNFTToChild = async (
-    childAddr: string,
-    receiver: string,
-    identifier: string,
-    ids: Array<number>,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'batchSendChildNFTToChild'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(childAddr, fcl.t.Address),
-      fcl.arg(receiver, fcl.t.Address),
-      fcl.arg(identifier, fcl.t.String),
-      fcl.arg(ids, fcl.t.Array(fcl.t.UInt64)),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: childAddr,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: identifier,
-      from_type: 'flow',
-      to_type: 'flow',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  batchBridgeChildNFTToEvm = async (
-    childAddr: string,
-    identifier: string,
-    ids: Array<number>,
-    token
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'batchBridgeChildNFTToEvm'
-    );
-    const replacedScript = replaceNftKeywords(script, token);
-    const txID = await userWalletService.sendTransaction(replacedScript, [
-      fcl.arg(identifier, fcl.t.String),
-      fcl.arg(childAddr, fcl.t.Address),
-      fcl.arg(ids, fcl.t.Array(fcl.t.UInt64)),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: childAddr,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: identifier,
-      from_type: 'flow',
-      to_type: 'evm',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  batchBridgeChildNFTFromEvm = async (
-    childAddr: string,
-    identifier: string,
-    ids: Array<number>
-  ): Promise<string> => {
-    const script = await getScripts(
-      userWalletService.getNetwork(),
-      'hybridCustody',
-      'batchBridgeChildNFTFromEvm'
-    );
-
-    const txID = await userWalletService.sendTransaction(script, [
-      fcl.arg(identifier, fcl.t.String),
-      fcl.arg(childAddr, fcl.t.Address),
-      fcl.arg(ids, fcl.t.Array(fcl.t.UInt256)),
-    ]);
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: childAddr,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: identifier,
-      from_type: 'flow',
-      to_type: 'evm',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  bridgeNftToEvmAddress = async (
-    flowIdentifier: string,
-    ids: number,
-    recipientEvmAddress: string
-  ): Promise<string> => {
-    const shouldCoverBridgeFee = await remoteConfigService.getFeatureFlag('cover_bridge_fee');
-    const scriptName = shouldCoverBridgeFee
-      ? 'bridgeNFTToEvmAddressWithPayer'
-      : 'bridgeNFTToEvmAddressV2';
-    const script = await getScripts(userWalletService.getNetwork(), 'bridge', scriptName);
-
-    if (recipientEvmAddress.startsWith('0x')) {
-      recipientEvmAddress = recipientEvmAddress.substring(2);
-    }
-
-    const txID = await userWalletService.sendTransaction(
-      script,
-      [
-        fcl.arg(flowIdentifier, fcl.t.String),
-        fcl.arg(ids, fcl.t.UInt64),
-        fcl.arg(recipientEvmAddress, fcl.t.String),
-      ],
-      shouldCoverBridgeFee
-    );
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: flowIdentifier,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: flowIdentifier,
-      from_type: 'evm',
-      to_type: 'evm',
-      isMove: false,
-    });
-    return txID;
-  };
-
-  bridgeNftFromEvmToFlow = async (
-    flowIdentifier: string,
-    ids: number,
-    receiver: string
-  ): Promise<string> => {
-    const shouldCoverBridgeFee = await remoteConfigService.getFeatureFlag('cover_bridge_fee');
-    const scriptName = shouldCoverBridgeFee
-      ? 'bridgeNFTFromEvmToFlowWithPayer'
-      : 'bridgeNFTFromEvmToFlowV3';
-    const script = await getScripts(userWalletService.getNetwork(), 'bridge', scriptName);
-
-    const txID = await userWalletService.sendTransaction(
-      script,
-      [
-        fcl.arg(flowIdentifier, fcl.t.String),
-        fcl.arg(ids, fcl.t.UInt256),
-        fcl.arg(receiver, fcl.t.Address),
-      ],
-      shouldCoverBridgeFee
-    );
-    mixpanelTrack.track('nft_transfer', {
-      tx_id: txID,
-      from_address: flowIdentifier,
-      to_address: (await this.getCurrentAddress()) || '',
-      nft_identifier: flowIdentifier,
-      from_type: 'flow',
-      to_type: 'evm',
-      isMove: false,
-    });
     return txID;
   };
 
@@ -3080,7 +2127,7 @@ export class WalletController extends BaseController {
     body = '',
     icon = chrome.runtime.getURL('./images/icon-64.png')
   ) => {
-    if (!txId || !txId.match(/^0?x?[0-9a-fA-F]{64}/)) {
+    if (!txId || !txId.match(/^0?x?[0-9a-fAF]{64}/)) {
       return;
     }
     const address = (await this.getCurrentAddress()) || '0x';

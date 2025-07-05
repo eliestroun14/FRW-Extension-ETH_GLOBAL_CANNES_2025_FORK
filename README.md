@@ -7,9 +7,42 @@ If you'd like to contribute to the extension, you'll need to install Node.js, pn
 1. `npm install --global corepack@latest`
 2. `corepack enable pnpm`
 3. `pnpm i`
-4. Get `.env.dev` from another developer
-5. `pnpm build:dev`
-6. Load Unpacked at `chrome://extensions/` in developer mode and pick the `dist` folder created by build:dev
+4. Copy `.env.example` to `.env.dev` and fill basic values (see AI Agent Setup below)
+5. `pnpm build:dev-ci` (use this instead of build:dev to avoid watch mode issues)
+6. Load Unpacked at `chrome://extensions/` in developer mode and pick the `dist` folder
+
+### 🚀 AI Agent Setup for Hackathon
+
+This fork includes an AI Agent for DeFi onboarding! To get it working:
+
+1. **Environment Setup**: The `.env.dev` file should have these minimum values:
+   ```bash
+   MIXPANEL_TOKEN="test_token_for_development"
+   DEV_PASSWORD="YourTestPassword123!"
+   ```
+
+2. **Quick Build**:
+   ```bash
+   pnpm build:dev-ci
+   ```
+
+3. **Load Extension**:
+   - Go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select the `dist` folder
+
+4. **Auto-Setup in Development**:
+   - When you first open the extension, it will attempt to automatically create a development wallet
+   - If auto-setup succeeds, you'll have a fully functional wallet with your `DEV_PASSWORD`
+   - If auto-setup fails, click **"Skip Setup for Demo"** to access the AI Agent features
+   - In demo mode, the AI Agent tab is fully functional while wallet features are limited
+
+5. **Try the AI Agent**:
+   - After setup (or demo mode), click the 4th tab "AI Agent" to see the new features!
+   - The AI Agent works in both full wallet mode and demo mode
+
+**Note**: Firebase is disabled in development mode to avoid configuration errors. The extension will work without Firebase backend in demo mode, and all Firebase-related console messages are expected and can be ignored.
 
 ## Documentation
 
@@ -183,3 +216,41 @@ The analysis will generate several files in the `.github-data` directory:
   - `{repo-name}-bug-heatmap.html`: Interactive visualization of bug hotspots
   - `{repo-name}-high-priority-report.md`: Detailed markdown report
   - `{repo-name}-high-priority-changes.json`: Raw data for further analysis
+
+### 🛠 Troubleshooting Common Issues
+
+**Extension Errors in Chrome:**
+
+1. **"Permission 'camera' is unknown"**
+   - Run `pnpm build:dev-ci` to rebuild with correct manifest
+   - The dev manifest shouldn't include camera permission
+
+2. **"MIXPANEL_TOKEN is not defined"**
+   - Check your `.env.dev` file has: `MIXPANEL_TOKEN="test_token_for_development"`
+   - Rebuild: `pnpm build:dev-ci`
+
+3. **Firebase Configuration Errors**
+   - Firebase is disabled in development mode to prevent configuration errors
+   - Console messages like "Firebase config not available" are expected
+   - The extension functions completely without Firebase in demo mode
+   - No action needed - these are informational messages only
+
+4. **Auto-Setup Issues / Infinite Loop**
+   - If the auto-setup fails or gets stuck in a loop, use the "Skip Setup for Demo" button
+   - This bypasses wallet creation and allows you to access the AI Agent features
+   - The wallet functionality will be limited, but the AI Agent tab will be fully accessible
+
+5. **TypeScript Build Errors**
+   - The extension may have pre-existing TypeScript errors related to missing methods
+   - These don't prevent the extension from running in development mode
+   - Focus on the AI Agent features which are fully functional
+
+**Loading the Extension:**
+- Always use `pnpm build:dev-ci` (not `build:dev`) for stable builds
+- Reload the extension in Chrome after each rebuild
+- Check Chrome DevTools console for specific error details
+
+**Demo Mode:**
+- If wallet creation fails, click "Skip Setup for Demo" to access the AI Agent
+- In demo mode, you can fully explore the AI Agent features in the 4th tab
+- Some wallet functionality may be limited, but this is intended for showcasing the AI features

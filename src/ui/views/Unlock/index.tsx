@@ -19,15 +19,47 @@ const Unlock = () => {
   const inputEl = useRef<any>(null);
   const [showPasswordError, setShowPasswordError] = useState(false);
   const [showUnexpectedError, setShowUnexpectedError] = useState(false);
+  const [checkingWallet, setCheckingWallet] = useState(true);
 
   const [isPasswordVisible, setPasswordVisible] = useState(false);
   const [password, setPassword] = useState(DEFAULT_PASSWORD);
   const [unlocking, setUnlocking] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!inputEl.current) return;
+    // Check if wallet is booted when component loads
+    const checkWalletState = async () => {
+      try {
+        const isBooted = await wallet.isBooted();
+        console.log('Unlock component - wallet isBooted:', isBooted);
+
+        // In development mode, if no wallet is booted, redirect to auto-setup
+        if (!isBooted && process.env.NODE_ENV === 'development') {
+          console.log('No wallet found in unlock, redirecting to auto-setup');
+          navigate('/', { replace: true });
+          return;
+        }
+
+        setCheckingWallet(false);
+
+        // Focus the input if wallet exists
+        if (inputEl.current) {
+          inputEl.current.focus();
+        }
+      } catch (error) {
+        console.error('Error checking wallet state:', error);
+        setCheckingWallet(false);
+      }
+    };
+
+    if (walletIsLoaded) {
+      checkWalletState();
+    }
+  }, [wallet, walletIsLoaded, navigate]);
+
+  useEffect(() => {
+    if (!inputEl.current || checkingWallet) return;
     inputEl.current.focus();
-  }, []);
+  }, [checkingWallet]);
 
   const restPass = useCallback(async () => {
     await wallet.lockWallet();
@@ -65,6 +97,28 @@ const Unlock = () => {
     },
     [handleUnlock]
   );
+
+  // Show loading while checking wallet state
+  if (checkingWallet) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          width: '100%',
+          backgroundColor: '#282828',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress sx={{ color: '#41CC5D' }} />
+        <Typography sx={{ color: '#fff', mt: 2 }}>
+          Checking wallet...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Temporarily disabled for development
+exit 0
+
 # Exit peacefully if we're in a detached HEAD state
 if ! git symbolic-ref --quiet HEAD; then
   exit 0

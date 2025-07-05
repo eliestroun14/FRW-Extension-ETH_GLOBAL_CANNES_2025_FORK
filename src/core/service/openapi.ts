@@ -4,56 +4,56 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import { getApp, initializeApp } from 'firebase/app';
 import {
-  getAuth,
-  indexedDBLocalPersistence,
-  onAuthStateChanged,
-  setPersistence,
-  signInAnonymously,
-  signInWithCustomToken,
-  type Unsubscribe,
-  type User,
+    getAuth,
+    indexedDBLocalPersistence,
+    onAuthStateChanged,
+    setPersistence,
+    signInAnonymously,
+    signInWithCustomToken,
+    type Unsubscribe,
+    type User,
 } from 'firebase/auth/web-extension';
 import { getId, getInstallations } from 'firebase/installations';
 
 import { INITIAL_OPENAPI_URL, WEB_NEXT_URL } from '@/shared/constant/domain-constants';
 import type {
-  BalanceMap,
-  CadenceTokenInfo,
-  CustomFungibleTokenInfo,
-  EvmTokenInfo,
-  FungibleTokenInfo,
-  FungibleTokenListResponse,
+    BalanceMap,
+    CadenceTokenInfo,
+    CustomFungibleTokenInfo,
+    EvmTokenInfo,
+    FungibleTokenInfo,
+    FungibleTokenListResponse,
 } from '@/shared/types/coin-types';
 import { CURRENT_ID_KEY } from '@/shared/types/keyring-types';
 import {
-  type AccountBalanceInfo,
-  type AccountKeyRequest,
-  type CheckResponse,
-  type Contact,
-  type DeviceInfoRequest,
-  getPriceProvider,
-  type KeyResponseItem,
-  type NewsConditionType,
-  type NewsItem,
-  type NftCollection,
-  type NFTModelV2,
-  Period,
-  type PeriodFrequency,
-  PriceProvider,
-  type SignInResponse,
-  type StorageInfo,
-  type UserInfoResponse,
+    type AccountBalanceInfo,
+    type AccountKeyRequest,
+    type CheckResponse,
+    type Contact,
+    type DeviceInfoRequest,
+    getPriceProvider,
+    type KeyResponseItem,
+    type NewsConditionType,
+    type NewsItem,
+    type NftCollection,
+    type NFTModelV2,
+    Period,
+    type PeriodFrequency,
+    PriceProvider,
+    type SignInResponse,
+    type StorageInfo,
+    type UserInfoResponse,
 } from '@/shared/types/network-types';
 import { type NFTCollections } from '@/shared/types/nft-types';
 import type { TokenInfo } from '@/shared/types/token-info';
 import {
-  type ActiveAccountType,
-  type Currency,
-  DEFAULT_CURRENCY,
-  type FlowAddress,
-  type LoggedInAccount,
-  type LoggedInAccountWithIndex,
-  type PublicKeyAccount,
+    type ActiveAccountType,
+    type Currency,
+    DEFAULT_CURRENCY,
+    type FlowAddress,
+    type LoggedInAccount,
+    type LoggedInAccountWithIndex,
+    type PublicKeyAccount,
 } from '@/shared/types/wallet-types';
 import { isValidFlowAddress } from '@/shared/utils/address';
 import { getStringFromHashAlgo, getStringFromSignAlgo } from '@/shared/utils/algo';
@@ -73,14 +73,14 @@ import { version } from '../utils/package-version';
 import fetchConfig from './remoteConfig';
 
 import {
-  addressBookService,
-  coinListService,
-  googleSafeHostService,
-  mixpanelTrack,
-  nftService,
-  transactionService,
-  userInfoService,
-  userWalletService,
+    addressBookService,
+    coinListService,
+    googleSafeHostService,
+    mixpanelTrack,
+    nftService,
+    transactionService,
+    userInfoService,
+    userWalletService,
 } from './index';
 
 type CurrencyResponse = {
@@ -152,13 +152,26 @@ export interface OpenApiStore {
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
 const firebaseConfig = getFirbaseConfig();
-const app = initializeApp(firebaseConfig, process.env.NODE_ENV);
-const auth = getAuth(app);
-// const remoteConfig = getRemoteConfig(app);
+let app: any = null;
+let auth: any = null;
+
+// Only initialize Firebase if config is available
+if (firebaseConfig && firebaseConfig.apiKey) {
+  try {
+    app = initializeApp(firebaseConfig, process.env.NODE_ENV);
+    auth = getAuth(app);
+  } catch (error) {
+    console.warn('Failed to initialize Firebase app:', error);
+  }
+}
 
 const remoteFetch = fetchConfig;
 
 const waitForAuthInit = async () => {
+  if (!auth) {
+    return; // Skip auth initialization if Firebase is not configured
+  }
+
   let unsubscribe: Unsubscribe;
   await new Promise<void>((resolve) => {
     unsubscribe = auth.onAuthStateChanged((_user) => resolve());
@@ -166,8 +179,10 @@ const waitForAuthInit = async () => {
   (await unsubscribe!)();
 };
 
-onAuthStateChanged(auth, (user: User | null) => {
-  if (user) {
+// Only set up auth state change listener if auth is available
+if (auth) {
+  onAuthStateChanged(auth, (user: User | null) => {
+    if (user) {
     // User is signed in, see docs for a list of available properties
     // https://firebase.google.com/docs/reference/js/firebase.User
     // const uid = user.uid;
@@ -186,6 +201,7 @@ onAuthStateChanged(auth, (user: User | null) => {
   // note fcl setup is async
   userWalletService.setupFcl();
 });
+}
 
 const dataConfig: Record<string, OpenApiConfigValue> = {
   check_username: {
@@ -450,7 +466,29 @@ export class OpenApiService {
         ? data.network
         : await userWalletService.getNetwork());
 
-    const app = getApp(process.env.NODE_ENV!);
+    // Check if Firebase is properly initialized
+    if (!app || !auth) {
+      // Firebase not available in development mode
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Firebase not initialized, proceeding without authentication');
+        const init = {
+          method,
+          headers: {
+            Network: network,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        };
+        if (method.toUpperCase() !== 'GET') {
+          init['body'] = JSON.stringify(data);
+        }
+        const response = await fetch(requestUrl, init);
+        return await response.json();
+      } else {
+        throw new Error('Firebase authentication required but not configured');
+      }
+    }
+
     const user = await getAuth(app).currentUser;
     const init = {
       method,
@@ -468,15 +506,25 @@ export class OpenApiService {
     // Wait for firebase auth to complete
     await waitForAuthInit();
 
-    if (user !== null) {
-      const idToken = await user.getIdToken();
-      init.headers['Authorization'] = 'Bearer ' + idToken;
-    } else {
-      // If no user, then sign in as anonymous first
-      await signInAnonymously(auth);
-      const anonymousUser = await getAuth(app).currentUser;
-      const idToken = await anonymousUser?.getIdToken();
-      init.headers['Authorization'] = 'Bearer ' + idToken;
+    try {
+      if (user !== null) {
+        const idToken = await user.getIdToken();
+        init.headers['Authorization'] = 'Bearer ' + idToken;
+      } else {
+        // If no user, then sign in as anonymous first
+        await signInAnonymously(auth);
+        const anonymousUser = await getAuth(app).currentUser;
+        const idToken = await anonymousUser?.getIdToken();
+        init.headers['Authorization'] = 'Bearer ' + idToken;
+      }
+    } catch (authError) {
+      // In development mode, continue without authentication if Firebase fails
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Firebase authentication failed in development mode:', authError);
+        // Continue without authentication
+      } else {
+        throw authError;
+      }
     }
 
     const response = await fetch(requestUrl, init);
