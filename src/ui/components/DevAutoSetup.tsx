@@ -1,7 +1,6 @@
 import { DEFAULT_PASSWORD } from '@/shared/utils/default';
 import { useWallet } from '@/ui/hooks/use-wallet';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import * as bip39 from 'bip39';
 import React, { useEffect, useState } from 'react';
 
 interface DevAutoSetupProps {

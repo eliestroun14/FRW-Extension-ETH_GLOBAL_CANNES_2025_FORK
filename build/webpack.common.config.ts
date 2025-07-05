@@ -56,6 +56,9 @@ const config = (env: { config: 'dev' | 'pro' | 'none' }): webpack.Configuration 
               sideEffects: true,
               test: /[\\/]pageProvider[\\/]index.ts/,
               loader: 'ts-loader',
+              options: {
+                transpileOnly: true,
+              },
             },
             {
               test: /[\\/]ui[\\/]index.tsx/,
@@ -73,6 +76,9 @@ const config = (env: { config: 'dev' | 'pro' | 'none' }): webpack.Configuration 
             },
             {
               loader: 'ts-loader',
+              options: {
+                transpileOnly: true,
+              },
             },
           ],
         },
