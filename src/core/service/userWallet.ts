@@ -241,12 +241,7 @@ class UserWallet {
       }
       return this.store.emulatorMode;
     } catch (error) {
-      // In development mode, allow emulator mode if remote config fails
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Remote config failed, using default emulator mode in development:', error);
-        return this.store?.emulatorMode || false;
-      }
-      // In production, disable emulator mode if we can't verify the feature flag
+      console.warn('Failed to get emulator mode from remote config, defaulting to false:', error);
       return false;
     }
   };
@@ -254,9 +249,14 @@ class UserWallet {
   setEmulatorMode = async (emulatorMode: boolean) => {
     let emulatorModeToSet = emulatorMode;
     if (emulatorModeToSet) {
-      // check feature flag
-      const enableEmulatorMode = await remoteConfigService.getFeatureFlag('emulator_mode');
-      if (!enableEmulatorMode) {
+      try {
+        // check feature flag
+        const enableEmulatorMode = await remoteConfigService.getFeatureFlag('emulator_mode');
+        if (!enableEmulatorMode) {
+          emulatorModeToSet = false;
+        }
+      } catch (error) {
+        console.warn('Failed to check emulator mode feature flag, disabling emulator mode:', error);
         emulatorModeToSet = false;
       }
     }
@@ -266,9 +266,14 @@ class UserWallet {
 
   // Moved from WalletController to UserWallet
   allowFreeGas = async (): Promise<boolean> => {
-    const isFreeGasFeeKillSwitch = await remoteConfigService.getFeatureFlag('free_gas');
-    const isFreeGasFeeEnabled = await storage.get('lilicoPayer');
-    return isFreeGasFeeKillSwitch && isFreeGasFeeEnabled;
+    try {
+      const isFreeGasFeeKillSwitch = await remoteConfigService.getFeatureFlag('free_gas');
+      const isFreeGasFeeEnabled = await storage.get('lilicoPayer');
+      return isFreeGasFeeKillSwitch && isFreeGasFeeEnabled;
+    } catch (error) {
+      console.warn('Failed to check free gas feature flag, defaulting to false:', error);
+      return false;
+    }
   };
 
   /**

@@ -152,26 +152,13 @@ export interface OpenApiStore {
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
 const firebaseConfig = getFirbaseConfig();
-let app: any = null;
-let auth: any = null;
-
-// Only initialize Firebase if config is available
-if (firebaseConfig && firebaseConfig.apiKey) {
-  try {
-    app = initializeApp(firebaseConfig, process.env.NODE_ENV);
-    auth = getAuth(app);
-  } catch (error) {
-    console.warn('Failed to initialize Firebase app:', error);
-  }
-}
+const app = initializeApp(firebaseConfig, process.env.NODE_ENV);
+const auth = getAuth(app);
+// const remoteConfig = getRemoteConfig(app);
 
 const remoteFetch = fetchConfig;
 
 const waitForAuthInit = async () => {
-  if (!auth) {
-    return; // Skip auth initialization if Firebase is not configured
-  }
-
   let unsubscribe: Unsubscribe;
   await new Promise<void>((resolve) => {
     unsubscribe = auth.onAuthStateChanged((_user) => resolve());
@@ -179,10 +166,8 @@ const waitForAuthInit = async () => {
   (await unsubscribe!)();
 };
 
-// Only set up auth state change listener if auth is available
-if (auth) {
-  onAuthStateChanged(auth, (user: User | null) => {
-    if (user) {
+onAuthStateChanged(auth, (user: User | null) => {
+  if (user) {
     // User is signed in, see docs for a list of available properties
     // https://firebase.google.com/docs/reference/js/firebase.User
     // const uid = user.uid;
@@ -201,7 +186,6 @@ if (auth) {
   // note fcl setup is async
   userWalletService.setupFcl();
 });
-}
 
 const dataConfig: Record<string, OpenApiConfigValue> = {
   check_username: {
@@ -466,29 +450,7 @@ export class OpenApiService {
         ? data.network
         : await userWalletService.getNetwork());
 
-    // Check if Firebase is properly initialized
-    if (!app || !auth) {
-      // Firebase not available in development mode
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Firebase not initialized, proceeding without authentication');
-        const init = {
-          method,
-          headers: {
-            Network: network,
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-        };
-        if (method.toUpperCase() !== 'GET') {
-          init['body'] = JSON.stringify(data);
-        }
-        const response = await fetch(requestUrl, init);
-        return await response.json();
-      } else {
-        throw new Error('Firebase authentication required but not configured');
-      }
-    }
-
+    const app = getApp(process.env.NODE_ENV!);
     const user = await getAuth(app).currentUser;
     const init = {
       method,
@@ -506,24 +468,20 @@ export class OpenApiService {
     // Wait for firebase auth to complete
     await waitForAuthInit();
 
-    try {
-      if (user !== null) {
-        const idToken = await user.getIdToken();
-        init.headers['Authorization'] = 'Bearer ' + idToken;
+    if (user !== null) {
+      const idToken = await user.getIdToken();
+      init.headers['Authorization'] = 'Bearer ' + idToken;
+    } else {
+      // In development mode, skip Firebase auth if not properly configured
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: Skipping Firebase authentication');
+        // Continue without auth header
       } else {
         // If no user, then sign in as anonymous first
         await signInAnonymously(auth);
         const anonymousUser = await getAuth(app).currentUser;
         const idToken = await anonymousUser?.getIdToken();
         init.headers['Authorization'] = 'Bearer ' + idToken;
-      }
-    } catch (authError) {
-      // In development mode, continue without authentication if Firebase fails
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Firebase authentication failed in development mode:', authError);
-        // Continue without authentication
-      } else {
-        throw authError;
       }
     }
 

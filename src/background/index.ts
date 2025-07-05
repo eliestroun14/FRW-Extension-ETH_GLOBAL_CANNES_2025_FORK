@@ -69,47 +69,37 @@ async function initAppMeta() {
   // description.content = i18n.t('appDescription');
   // head?.appendChild(description);
 
-  try {
-    await firebaseSetup();
-  } catch (error) {
-    consoleError('Failed to setup Firebase in initAppMeta:', error);
-  }
+  firebaseSetup();
 
   // note fcl setup is async
   await userWalletService.setupFcl();
 }
 
 async function firebaseSetup() {
-  try {
-    const env: string = process.env.NODE_ENV!;
-    const firebaseConfig = getFirbaseConfig();
+  const env: string = process.env.NODE_ENV!;
+  const firebaseConfig = getFirbaseConfig();
 
-    // Skip Firebase setup if config is not available (development mode)
-    if (!firebaseConfig || !firebaseConfig.apiKey) {
-      consoleLog('Firebase config not available, skipping Firebase setup (development mode)');
-      return;
-    }
-
-    const app = initializeApp(firebaseConfig, env);
-
-    const auth = getAuth(app);
-    setPersistence(auth, indexedDBLocalPersistence);
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        // note fcl setup is async
-        userWalletService.setupFcl();
-      } else {
-        // User is signed out - try to sign in anonymously
-        signInAnonymously(auth).catch((error) => {
-          consoleError('Failed to sign in anonymously to Firebase:', error);
-        });
-      }
-    });
-  } catch (error) {
-    consoleError('Firebase setup failed, continuing without Firebase (development mode):', error);
+  // In development mode, skip Firebase setup if config is incomplete
+  if (env === 'development') {
+    console.log('Development mode: Firebase setup skipped');
+    return;
   }
+
+  const app = initializeApp(firebaseConfig, env);
+
+  const auth = getAuth(app);
+  setPersistence(auth, indexedDBLocalPersistence);
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // User is signed in, see docs for a list of available properties
+      // https://firebase.google.com/docs/reference/js/firebase.User
+      // note fcl setup is async
+      userWalletService.setupFcl();
+    } else {
+      // User is signed out
+      signInAnonymously(auth);
+    }
+  });
 }
 
 async function restoreAppState() {

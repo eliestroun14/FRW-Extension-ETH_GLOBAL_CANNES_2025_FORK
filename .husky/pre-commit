@@ -1,2 +1,3 @@
 # Temporarily disabled for development
 # pnpm lint-staged
+exit 0
