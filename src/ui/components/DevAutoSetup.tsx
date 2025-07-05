@@ -63,25 +63,36 @@ const DevAutoSetup: React.FC<DevAutoSetupProps> = ({ onSetupComplete }) => {
 
       // Try the simple boot approach first
       console.log('Attempting to boot wallet with password...');
-      await wallet.boot(devPassword);
-      console.log('Wallet booted successfully!');
+      try {
+        await wallet.boot(devPassword);
+        console.log('Wallet booted successfully!');
 
-      // Wait for the wallet state to update
-      setTimeout(async () => {
-        const newIsBooted = await wallet.isBooted();
-        console.log('After boot - wallet isBooted:', newIsBooted);
-        onSetupComplete();
-      }, 1000);
+        // Verify if wallet is actually booted after boot call
+        setTimeout(async () => {
+          const newIsBooted = await wallet.isBooted();
+          console.log('After boot - wallet isBooted:', newIsBooted);
+          
+          if (newIsBooted) {
+            onSetupComplete();
+          } else {
+            console.log('Boot succeeded but wallet still not booted, switching to demo mode');
+            setError('Wallet creation partially succeeded but not fully functional. Please use demo mode.');
+            setIsCreating(false);
+          }
+        }, 1000);
+      } catch (bootErr) {
+        console.log('Boot failed, switching to demo mode:', bootErr);
+        setError('Wallet creation failed. Please use "Skip Setup for Demo" to continue.');
+        setIsCreating(false);
+      }
 
     } catch (err) {
       console.error('Failed to create development wallet:', err);
       console.error('Error details:', JSON.stringify(err, null, 2));
 
-      let errorMessage = 'Failed to create wallet';
+      let errorMessage = 'Failed to create wallet. Please use "Skip Setup for Demo" to continue.';
       if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'object' && err !== null) {
-        errorMessage = err.toString() || JSON.stringify(err);
+        errorMessage = err.message + ' Please use demo mode.';
       }
 
       setError(errorMessage);

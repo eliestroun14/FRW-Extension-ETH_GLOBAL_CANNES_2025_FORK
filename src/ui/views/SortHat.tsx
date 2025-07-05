@@ -17,8 +17,8 @@ const SortHat = () => {
   let [getApproval, , rejectApproval] = useApproval();
 
   const loadView = useCallback(async () => {
-    if (isCheckingWallet) {
-      console.log('Already checking wallet, skipping...');
+    if (isCheckingWallet || showDevSetup) {
+      console.log('Already checking wallet or showing dev setup, skipping...');
       return;
     }
 
@@ -115,16 +115,25 @@ const SortHat = () => {
     } finally {
       setIsCheckingWallet(false);
     }
-  }, [getApproval, rejectApproval, wallet, isCheckingWallet]);
+  }, [getApproval, rejectApproval, wallet, isCheckingWallet, showDevSetup]);
 
   const handleSetupComplete = useCallback(() => {
     console.log('Setup completed, resetting state...');
     setShowDevSetup(false);
     setIsCheckingWallet(false);
-    // Reload the view to check the new wallet state
-    setTimeout(() => {
-      loadView();
-    }, 500);
+    
+    // Check if we're in demo mode
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    
+    if (isDemoMode) {
+      console.log('Demo mode active, going to dashboard directly');
+      setTo('/dashboard');
+    } else {
+      // Only reload the view if not in demo mode
+      setTimeout(() => {
+        loadView();
+      }, 500);
+    }
   }, [loadView]);
 
   useEffect(() => {
