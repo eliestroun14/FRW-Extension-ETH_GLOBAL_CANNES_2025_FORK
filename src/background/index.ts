@@ -1,11 +1,11 @@
 import { ethErrors } from 'eth-rpc-errors';
 import { initializeApp } from 'firebase/app';
 import {
-  getAuth,
-  indexedDBLocalPersistence,
-  onAuthStateChanged,
-  setPersistence,
-  signInAnonymously,
+    getAuth,
+    indexedDBLocalPersistence,
+    onAuthStateChanged,
+    setPersistence,
+    signInAnonymously,
 } from 'firebase/auth/web-extension';
 import 'reflect-metadata';
 
@@ -21,24 +21,24 @@ import { Message } from '@/shared/utils/messaging';
 import storage from '@/shared/utils/storage';
 
 import {
-  addressBookService,
-  coinListService,
-  evmNftService,
-  googleSafeHostService,
-  keyringService,
-  logListener,
-  mixpanelTrack,
-  newsService,
-  nftService,
-  openapiService,
-  permissionService,
-  preferenceService,
-  remoteConfigService,
-  sessionService,
-  tokenListService,
-  transactionService,
-  userInfoService,
-  userWalletService,
+    addressBookService,
+    coinListService,
+    evmNftService,
+    googleSafeHostService,
+    keyringService,
+    logListener,
+    mixpanelTrack,
+    newsService,
+    nftService,
+    openapiService,
+    permissionService,
+    preferenceService,
+    remoteConfigService,
+    sessionService,
+    tokenListService,
+    transactionService,
+    userInfoService,
+    userWalletService,
 } from '../core/service';
 import { getFirbaseConfig } from '../core/utils/firebaseConfig';
 import { setEnvironmentBadge } from '../core/utils/setEnvironmentBadge';

@@ -7,48 +7,48 @@ import { getAuth, signInAnonymously } from 'firebase/auth/web-extension';
 
 import { DEFAULT_WEIGHT, FLOW_BIP44_PATH } from '@/shared/constant/algo-constants';
 import {
-  combinePubPkString,
-  type PublicPrivateKeyTuple,
-  tupleToPrivateKey,
+    combinePubPkString,
+    type PublicPrivateKeyTuple,
+    tupleToPrivateKey,
 } from '@/shared/types/key-types';
 import {
-  type AccountKeyRequest,
-  type DeviceInfoRequest,
-  type FlowNetwork,
-  networkToChainId,
+    type AccountKeyRequest,
+    type DeviceInfoRequest,
+    type FlowNetwork,
+    networkToChainId,
 } from '@/shared/types/network-types';
 import {
-  type ActiveAccountType,
-  type ChildAccountMap,
-  type EvmAddress,
-  type FlowAddress,
-  getActiveAccountTypeForAddress,
-  type MainAccount,
-  type PendingTransaction,
-  type PublicKeyAccount,
-  type WalletAccount,
-  type WalletAddress,
+    type ActiveAccountType,
+    type ChildAccountMap,
+    type EvmAddress,
+    type FlowAddress,
+    getActiveAccountTypeForAddress,
+    type MainAccount,
+    type PendingTransaction,
+    type PublicKeyAccount,
+    type WalletAccount,
+    type WalletAddress,
 } from '@/shared/types/wallet-types';
 import {
-  ensureEvmAddressPrefix,
-  isValidEthereumAddress,
-  isValidFlowAddress,
-  withPrefix,
+    ensureEvmAddressPrefix,
+    isValidEthereumAddress,
+    isValidFlowAddress,
+    withPrefix,
 } from '@/shared/utils/address';
 import {
-  accountBalanceKey,
-  accountBalanceRefreshRegex,
-  mainAccountsKey,
-  mainAccountsRefreshRegex,
-  mainAccountStorageBalanceKey,
-  mainAccountStorageBalanceRefreshRegex,
-  type MainAccountStorageBalanceStore,
-  pendingAccountCreationTransactionsKey,
-  pendingAccountCreationTransactionsRefreshRegex,
-  placeholderAccountsKey,
-  placeholderAccountsRefreshRegex,
-  userMetadataKey,
-  type UserMetadataStore,
+    accountBalanceKey,
+    accountBalanceRefreshRegex,
+    mainAccountsKey,
+    mainAccountsRefreshRegex,
+    mainAccountStorageBalanceKey,
+    mainAccountStorageBalanceRefreshRegex,
+    type MainAccountStorageBalanceStore,
+    pendingAccountCreationTransactionsKey,
+    pendingAccountCreationTransactionsRefreshRegex,
+    placeholderAccountsKey,
+    placeholderAccountsRefreshRegex,
+    userMetadataKey,
+    type UserMetadataStore,
 } from '@/shared/utils/cache-data-keys';
 import { consoleError, consoleWarn } from '@/shared/utils/console-log';
 import { getEmojiByIndex } from '@/shared/utils/emoji-util';
@@ -56,33 +56,33 @@ import { retryOperation } from '@/shared/utils/retryOperation';
 import storage from '@/shared/utils/storage';
 import { removeUserData, setUserData } from '@/shared/utils/user-data-access';
 import {
-  activeAccountsKey,
-  type ActiveAccountsStore,
-  getActiveAccountsData,
-  userWalletsKey,
-  type UserWalletStore,
+    activeAccountsKey,
+    type ActiveAccountsStore,
+    getActiveAccountsData,
+    userWalletsKey,
+    type UserWalletStore,
 } from '@/shared/utils/user-data-keys';
 
 import { defaultAccountKey, pubKeyAccountToAccountKey } from '../utils/account-key';
 import {
-  clearCachedData,
-  getCachedData,
-  getValidData,
-  registerBatchRefreshListener,
-  registerRefreshListener,
-  setCachedData,
+    clearCachedData,
+    getCachedData,
+    getValidData,
+    registerBatchRefreshListener,
+    registerRefreshListener,
+    setCachedData,
 } from '../utils/data-cache';
 import { fclConfig, fclConfirmNetwork } from '../utils/fclConfig';
 import {
-  getAccountsByPublicKeyTuple,
-  getAccountsWithPublicKey,
+    getAccountsByPublicKeyTuple,
+    getAccountsWithPublicKey,
 } from '../utils/modules/findAddressWithPubKey';
 import {
-  formPubKeyTuple,
-  pk2PubKeyTuple,
-  seed2PublicPrivateKey,
-  seedWithPathAndPhrase2PublicPrivateKey,
-  signWithKey,
+    formPubKeyTuple,
+    pk2PubKeyTuple,
+    seed2PublicPrivateKey,
+    seedWithPathAndPhrase2PublicPrivateKey,
+    signWithKey,
 } from '../utils/modules/publicPrivateKey';
 import createPersistStore from '../utils/persistStore';
 

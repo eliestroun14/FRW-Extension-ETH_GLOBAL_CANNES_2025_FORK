@@ -1,8 +1,8 @@
 import { type FeatureFlagKey, type FeatureFlags } from '@/shared/types/feature-types';
 import {
-  type RemoteConfig,
-  remoteConfigKey,
-  remoteConfigRefreshRegex,
+    type RemoteConfig,
+    remoteConfigKey,
+    remoteConfigRefreshRegex,
 } from '@/shared/utils/cache-data-keys';
 
 import { getValidData, registerRefreshListener, setCachedData } from '../utils/data-cache';
